@@ -3,6 +3,8 @@ import 'fake-indexeddb/auto'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { db } from '../db/database'
+import { eurosToCents } from '../pages/settingsForm'
+import type { BusinessProfile } from '../types'
 import { DexieStorageAdapter } from './DexieStorageAdapter'
 
 describe('DexieStorageAdapter', () => {
@@ -53,5 +55,43 @@ describe('DexieStorageAdapter', () => {
     const dump = await adapter.exportAll()
     expect(dump.formatVersion).toBe(1)
     expect(dump.clients).toHaveLength(1)
+  })
+
+  it('saves and reloads the profile cents and stamp-duty deadlines', async () => {
+    const profile: BusinessProfile = {
+      businessName: 'Example Studio',
+      registeredAddress: 'Via di Esempio 1, Rome, Italy',
+      vatNumber: '12345678901',
+      taxCode: 'RSSMRA80A01H501U',
+      regime: 'forfettario',
+      atecoCode: '96.02.02',
+      invoicePrefix: 'INV-',
+      nextInvoiceNumber: 1,
+      contractPrefix: 'CTR-',
+      nextContractNumber: 1,
+      iban: 'IT60X0542811101000000123456',
+      bicSwift: 'BPPIITRRXXX',
+      accountHolder: 'Example Studio',
+      defaultDepositPercent: 30,
+      courtOfJurisdiction: 'Rome, Italy',
+      annualRevenueTarget: eurosToCents('85000'),
+      stampDutyDeadlines: [
+        { id: 'stamp-q1-2030', label: 'Q1 2030', dueOn: '2030-05-31' },
+        { id: 'stamp-q2-2030', label: 'Q2 2030', dueOn: '2030-09-30' },
+      ],
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    }
+
+    await adapter.profile.save(profile)
+    db.close()
+    await db.open()
+    const reloaded = await new DexieStorageAdapter().profile.get()
+
+    expect(reloaded?.annualRevenueTarget).toBe(8_500_000)
+    expect(Number.isInteger(reloaded?.annualRevenueTarget)).toBe(true)
+    expect(reloaded?.stampDutyDeadlines).toEqual([
+      { id: 'stamp-q1-2030', label: 'Q1 2030', dueOn: '2030-05-31' },
+      { id: 'stamp-q2-2030', label: 'Q2 2030', dueOn: '2030-09-30' },
+    ])
   })
 })

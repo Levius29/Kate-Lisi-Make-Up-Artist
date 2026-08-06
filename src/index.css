@@ -40,6 +40,14 @@ body {
   overscroll-behavior-y: contain;
 }
 
+/* Keep installed-app momentum scrolling inside the content pane, not on body. */
+.app-scroll {
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

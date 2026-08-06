@@ -8,6 +8,12 @@ export interface EntityMetadata {
   deletedAt?: ISODateTime
 }
 
+export interface StampDutyDeadline {
+  id: string
+  label: string
+  dueOn: string
+}
+
 export interface BusinessProfile {
   businessName: string
   registeredAddress: string
@@ -27,6 +33,7 @@ export interface BusinessProfile {
   defaultDepositPercent: number
   courtOfJurisdiction: string
   annualRevenueTarget: MoneyCents
+  stampDutyDeadlines: StampDutyDeadline[]
   updatedAt: ISODateTime
 }
 

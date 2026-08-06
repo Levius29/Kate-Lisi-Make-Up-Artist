@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 const destinations = [
@@ -14,9 +15,38 @@ const destinations = [
  *   1024px and up — left rail; a bottom bar stretched across an iPad Pro looks wrong
  * The hidden one is display:none, so it leaves the accessibility tree too.
  */
+/*
+ * Content scrolls inside a fixed-height pane, which iOS handles badly when the
+ * on-screen keyboard opens: the focused field can end up behind the keyboard and
+ * Safari does not always scroll it back into view. Nudge it ourselves once the
+ * keyboard has finished animating. Touch devices only — on a desktop pointer this
+ * would just make the page jump under the cursor.
+ */
+function useKeyboardAwareFocus() {
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: coarse)').matches) return
+
+    function handleFocusIn(event: FocusEvent) {
+      const element = event.target
+      if (!(element instanceof HTMLElement)) return
+      if (!element.matches('input, textarea, select')) return
+
+      window.setTimeout(() => {
+        if (document.activeElement !== element) return
+        element.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }, 300)
+    }
+
+    document.addEventListener('focusin', handleFocusIn)
+    return () => document.removeEventListener('focusin', handleFocusIn)
+  }, [])
+}
+
 export function AppShell() {
+  useKeyboardAwareFocus()
+
   return (
-    <div className="min-h-dvh bg-canvas text-ink lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="h-dvh overflow-hidden bg-canvas text-ink lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <nav
         aria-label="Primary"
         className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line lg:bg-paper lg:py-10 lg:pl-[calc(1.25rem+env(safe-area-inset-left))] lg:pr-5"
@@ -45,7 +75,7 @@ export function AppShell() {
         </div>
       </nav>
 
-      <div className="min-w-0">
+      <div className="app-scroll min-w-0" data-app-scroll>
         <main className="mx-auto w-full max-w-3xl pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
           <Outlet />
         </main>
