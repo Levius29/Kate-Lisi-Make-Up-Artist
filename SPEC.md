@@ -431,3 +431,60 @@ This spec is long, and a single agent run will not hold all of it. The failure m
 that looks finished, compiles cleanly, and quietly gets the deposit clause or the date format
 wrong — neither of which surfaces until a client disputes a cancellation. Staging exists so each
 piece can actually be opened and checked before the next one buries it.
+
+---
+
+## 10. AMENDMENT — iPhone AND iPad DISPLAY
+
+*Added after the initial spec. This is a cross-cutting requirement: it applies to every screen
+of every stage, and no stage counts as green until it holds.*
+
+The app must display perfectly on **iPhone and iPad**, in **both orientations**. Desktop remains
+secondary; iPad is not. "Perfectly" means the specific things below, not a general aspiration.
+
+### 10.1 Supported viewports
+Every screen must be checked at all of these before its stage is called done:
+
+| Device | Portrait | Landscape |
+|---|---|---|
+| iPhone SE (smallest supported) | 375 × 667 | 667 × 375 |
+| iPhone 15/16 Pro | 393 × 852 | 852 × 393 |
+| iPhone 16 Pro Max | 430 × 932 | 932 × 430 |
+| iPad mini / Air | 768 × 1024 | 1024 × 768 |
+| iPad Pro 12.9" | 1024 × 1366 | 1366 × 1024 |
+| iPad Split View (narrow pane) | 320–507 wide | — |
+
+### 10.2 Safe areas and the notch
+- `viewport-fit=cover` in the viewport meta, and `env(safe-area-inset-*)` respected on every
+  fixed or sticky element — header, bottom navigation, sheets, toasts, modals.
+- Nothing may sit under the Dynamic Island, the status bar, or the home indicator. The bottom
+  navigation must clear the home indicator, not merely sit behind it.
+- In landscape on a notched iPhone, content must clear the left/right insets too.
+
+### 10.3 iOS Safari behaviours that must be handled
+- **Viewport height:** use `100dvh` (with a `100vh` fallback). `100vh` is wrong on iOS Safari
+  while the toolbar is showing and produces a page that scrolls when it should not.
+- **No zoom on focus:** every `input`, `select` and `textarea` must be at least **16px**.
+  Below that, iOS Safari zooms the page on focus and does not zoom back out.
+- **Tap targets:** minimum 44 × 44 CSS px (Apple Human Interface Guidelines). She is using this
+  one-handed, standing, holding a brush.
+- `-webkit-text-size-adjust: 100%`, `-webkit-tap-highlight-color: transparent`,
+  `touch-action: manipulation` (kills the 300ms double-tap delay).
+- `overscroll-behavior-y: contain` so the installed app does not rubber-band as a whole.
+- Momentum scrolling stays inside scroll containers, not on `body`.
+
+### 10.4 Layout adaptation
+- **< 768 (iPhone, iPad Split View narrow):** single column, bottom navigation, full-width sheets.
+- **≥ 768 portrait (iPad):** single column with a constrained measure — content must not stretch
+  edge to edge in full-bleed rows. Type scale steps up; whitespace grows.
+- **≥ 1024 landscape (iPad):** two-pane master–detail on the screens that have a natural list and
+  detail — Calendar, Clients, Money. Navigation becomes a **left rail**; a bottom bar stretched
+  across 1366px is not acceptable.
+- Rotating the device must not lose form state, scroll position, or clip content.
+
+### 10.5 Absolute layout rules
+- **No horizontal scrolling of the page at any supported width.** Wide content — the calendar
+  grid, fee tables, the invoice export preview — scrolls inside its own container with
+  `overflow-x: auto`, never the body.
+- No fixed pixel widths that exceed 320px on a container that must fit an iPad Split View pane.
+- Text must be legible without pinch-zoom at every viewport above.

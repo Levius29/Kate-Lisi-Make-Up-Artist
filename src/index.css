@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-canvas: #f5f1ec;
+  --color-paper: #fbf9f6;
+  --color-ink: #302a29;
+  --color-muted: #746b68;
+  --color-accent: #765f5a;
+  --color-line: #d8cec8;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-canvas);
+  /* iOS Safari otherwise inflates text in landscape. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  background: var(--color-canvas);
+  /* The page never scrolls sideways; wide content scrolls inside its own box. */
+  overflow-x: hidden;
+  /* Stops the installed app rubber-banding as a whole on iOS. */
+  overscroll-behavior-y: contain;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Removes the 300ms double-tap delay on iOS without disabling pinch-zoom. */
+button,
+a,
+label,
+select,
+summary,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+/*
+ * iOS Safari zooms the page when a field smaller than 16px receives focus, and
+ * does not zoom back out afterwards. 16px is a floor, not a design choice.
+ */
+input,
+select,
+textarea {
+  font-size: max(16px, 1rem);
+  font-family: inherit;
+}
+
+/* Apple HIG minimum touch target. She uses this one-handed, holding a brush. */
+button,
+[role='button'] {
+  min-height: 44px;
+}
+
+/*
+ * Checkboxes stay visually sane at 24px; the 44px target comes from the label
+ * that wraps them, so the control does not render stretched.
+ */
+input[type='checkbox'],
+input[type='radio'] {
+  width: 24px;
+  height: 24px;
+}
+
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

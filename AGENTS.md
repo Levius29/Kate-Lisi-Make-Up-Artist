@@ -42,3 +42,22 @@ reads better in English and no longer holds in Rome. Changes need explicit human
 
 ## Commits
 Conventional commits. One stage per branch.
+
+---
+
+## Amendment — iPhone and iPad display (added by the owner after the initial brief)
+
+The app must display perfectly on **iPhone and iPad**, in both orientations. Full detail in
+SPEC.md §10. This is cross-cutting: no stage is green until it holds on every screen that stage
+touches.
+
+- Check every screen at: iPhone SE 375×667, iPhone 15/16 Pro 393×852, iPhone 16 Pro Max 430×932,
+  iPad mini/Air 768×1024, iPad Pro 1024×1366, and both landscape and an iPad Split View pane.
+- Respect `env(safe-area-inset-*)` on every fixed element. Nothing under the Dynamic Island or
+  the home indicator.
+- Use `100dvh`, never `100vh`. Inputs are never below 16px or iOS zooms on focus and stays
+  zoomed. Tap targets at least 44×44 CSS px.
+- Layout: bottom navigation below 1024px; a left rail at 1024px and above, where a stretched
+  bottom bar would look wrong. Two-pane master-detail on iPad landscape for Calendar, Clients
+  and Money.
+- The page itself never scrolls horizontally. Wide content scrolls inside its own container.
