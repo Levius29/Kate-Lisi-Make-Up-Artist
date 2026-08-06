@@ -19,7 +19,7 @@ describe('DexieStorageAdapter', () => {
     await db.delete()
   })
 
-  it('creates, soft-deletes, restores, and exports an entity', async () => {
+  it('round-trips a client through create, edit, soft-delete, and restore', async () => {
     const client = await adapter.clients.create({
       firstName: 'Sample',
       lastName: 'Client',
@@ -30,7 +30,7 @@ describe('DexieStorageAdapter', () => {
       addressLine: 'Example address',
       city: 'Rome',
       country: 'Italy',
-      allergies: '',
+      allergies: 'Latex and lanolin',
       patchTestDone: false,
       productPreferences: {
         halal: false,
@@ -38,19 +38,38 @@ describe('DexieStorageAdapter', () => {
         crueltyFree: false,
         other: '',
       },
-      imageReleaseLevel: 'none',
+      imageReleaseLevel: 'face_obscured',
       gdprConsentAt: '2030-01-01T00:00:00.000Z',
       notes: '',
     })
 
     expect((await adapter.clients.list()).map(({ id }) => id)).toEqual([client.id])
 
+    await adapter.clients.put({
+      ...client,
+      city: 'Florence',
+      notes: 'Updated after consultation.',
+    })
+
+    const edited = await adapter.clients.get(client.id)
+    expect(edited).toMatchObject({
+      city: 'Florence',
+      notes: 'Updated after consultation.',
+      allergies: 'Latex and lanolin',
+      imageReleaseLevel: 'face_obscured',
+    })
+
     await adapter.clients.softDelete(client.id)
     expect(await adapter.clients.list()).toEqual([])
     expect(await adapter.clients.list({ includeDeleted: true })).toHaveLength(1)
 
     await adapter.clients.restore(client.id)
-    expect(await adapter.clients.list()).toHaveLength(1)
+    const restored = await adapter.clients.get(client.id)
+    expect(restored).toMatchObject({
+      allergies: 'Latex and lanolin',
+      imageReleaseLevel: 'face_obscured',
+    })
+    expect(restored?.deletedAt).toBeUndefined()
 
     const dump = await adapter.exportAll()
     expect(dump.formatVersion).toBe(1)
