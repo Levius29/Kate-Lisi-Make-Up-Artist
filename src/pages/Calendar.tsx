@@ -12,7 +12,7 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns'
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
@@ -35,10 +35,12 @@ import {
 } from '../lib/dates'
 import { formatEUR } from '../lib/money'
 import { calculatePaymentSummary } from '../lib/payments'
+import { buildRecallLink, updateRecallSentAt } from '../lib/recalls'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type {
   Appointment,
+  AppointmentRecall,
   AppointmentStatus,
   BusinessProfile,
   Client,
@@ -88,6 +90,7 @@ interface MilestoneItem {
   dateKey: string
   appointment: Appointment
   label: string
+  recall?: AppointmentRecall
 }
 
 type CalendarItem = AppointmentItem | MilestoneItem
@@ -149,7 +152,7 @@ function statusLabel(status: AppointmentStatus): string {
   return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
 }
 
-function createCalendarItems(appointments: readonly Appointment[]): CalendarItem[] {
+export function createCalendarItems(appointments: readonly Appointment[]): CalendarItem[] {
   return appointments.flatMap((appointment) => {
     const items: CalendarItem[] = [
       { kind: 'appointment', dateKey: romeDateKey(appointment.startAt), appointment },
@@ -162,6 +165,7 @@ function createCalendarItems(appointments: readonly Appointment[]): CalendarItem
         dateKey: romeDateKey(recall.dueAt),
         appointment,
         label: `${recall.channel === 'whatsapp' ? 'WhatsApp' : 'Email'} recall`,
+        recall,
       })
     })
     appointment.cancellationCutoffs.forEach((cutoff, index) => {
@@ -254,28 +258,106 @@ function MilestoneCard({ item, client, service, onOpen }: {
   service: Service | undefined
   onOpen: () => void
 }) {
+  const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState('')
+  const serviceName = service?.name ?? 'Service unavailable'
+  const recallLink = item.recall && client
+    ? buildRecallLink({
+        appointment: item.appointment,
+        client,
+        serviceName,
+        recall: item.recall,
+        nowIso: new Date().toISOString(),
+      })
+    : undefined
+
+  async function markRecallAsSent() {
+    if (!item.recall) return
+    setBusy(true)
+    setActionError('')
+    try {
+      const latest = await storage.appointments.get(item.appointment.id)
+      if (!latest) throw new Error('Appointment not found')
+      await storage.appointments.put(
+        updateRecallSentAt(latest, item.recall.id, new Date().toISOString()),
+      )
+    } catch {
+      setActionError('The recall could not be marked as sent. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-dashed border-accent bg-paper/70 px-4 py-3 text-left"
-    >
-      <span className="h-4 w-4 shrink-0 rotate-45 border-2 border-accent bg-canvas" aria-hidden="true" />
-      <span className="min-w-0">
-        <span className="block text-sm font-bold text-accent">{item.label}</span>
-        <span className="mt-0.5 block truncate text-sm text-muted">{clientName(client)} · {service?.name ?? 'Service unavailable'}</span>
-      </span>
-    </button>
+    <article className="min-w-0 rounded-2xl border border-dashed border-accent bg-paper/70 p-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold leading-5 text-accent">{item.label}</h3>
+          <p className="mt-1 break-words text-sm leading-5 text-muted">
+            For {clientName(client)} · {serviceName}
+          </p>
+          <p className="mt-1 text-sm leading-5 text-muted">
+            {formatFullDate(item.appointment.startAt)} at {formatTime(item.appointment.startAt)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="min-h-11 rounded-xl border border-accent px-3 text-sm font-bold text-accent"
+        >
+          View appointment
+        </button>
+        {item.recall ? (
+          recallLink ? (
+            <a
+              href={recallLink}
+              target={item.recall.channel === 'whatsapp' ? '_blank' : undefined}
+              rel={item.recall.channel === 'whatsapp' ? 'noreferrer' : undefined}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-3 text-sm font-bold text-paper"
+            >
+              {item.recall.channel === 'whatsapp' ? 'Open WhatsApp' : 'Open email'}
+            </a>
+          ) : (
+            <span className="flex min-h-11 items-center justify-center rounded-xl border border-line px-3 text-center text-sm font-bold text-muted">
+              {client ? 'Contact unavailable' : 'Client unavailable'}
+            </span>
+          )
+        ) : null}
+      </div>
+
+      {item.recall ? (
+        item.recall.sentAt ? (
+          <p className="mt-3 text-sm font-semibold text-success-text">
+            Sent {formatFullDate(item.recall.sentAt)}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void markRecallAsSent()}
+            disabled={busy}
+            className="mt-2 min-h-11 w-full rounded-xl border border-line px-3 text-sm font-bold text-muted disabled:opacity-60"
+          >
+            {busy ? 'Saving…' : 'Mark as sent'}
+          </button>
+        )
+      ) : null}
+      {actionError ? <p className="mt-2 text-sm font-bold leading-5 text-danger-text" aria-live="polite">{actionError}</p> : null}
+    </article>
   )
 }
 
-function DayAgenda({ dateKey, items, clientsById, servicesById, childAppointments, onOpen }: {
+function DayAgenda({ dateKey, items, clientsById, servicesById, childAppointments, onOpen, onClose }: {
   dateKey: string
   items: CalendarItem[]
   clientsById: Map<string, Client>
   servicesById: Map<string, Service>
   childAppointments: Map<string, Appointment[]>
   onOpen: (appointment: Appointment) => void
+  onClose?: () => void
 }) {
   const sorted = [...items].sort((left, right) => {
     if (left.kind !== right.kind) return left.kind === 'appointment' ? -1 : 1
@@ -284,9 +366,14 @@ function DayAgenda({ dateKey, items, clientsById, servicesById, childAppointment
 
   return (
     <section className="min-w-0" aria-label={`Schedule for ${longDateForKey(dateKey)}`}>
-      <header className="mb-5 border-b border-line pb-4">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Selected day</p>
-        <h2 className="mt-2 font-display text-2xl leading-tight text-ink">{longDateForKey(dateKey)}</h2>
+      <header className="mb-5 flex min-w-0 items-start justify-between gap-3 border-b border-line pb-4">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Selected day</p>
+          <h2 className="mt-2 font-display text-2xl leading-tight text-ink">{longDateForKey(dateKey)}</h2>
+        </div>
+        {onClose ? (
+          <button type="button" onClick={onClose} className="h-11 w-11 shrink-0 rounded-xl border border-line text-xl text-muted lg:hidden" aria-label="Close selected day">×</button>
+        ) : null}
       </header>
       <div className="space-y-3">
         {sorted.length === 0 ? (
@@ -316,6 +403,43 @@ function DayAgenda({ dateKey, items, clientsById, servicesById, childAppointment
         })}
       </div>
     </section>
+  )
+}
+
+function MilestoneSummary({ milestones, context }: {
+  milestones: MilestoneItem[]
+  context: 'month' | 'week'
+}) {
+  if (milestones.length === 0) return null
+  const fullLabel = milestones.length === 1
+    ? milestones[0]!.label
+    : `+${milestones.length} milestones`
+
+  return (
+    <div
+      className={`flex h-5 min-w-0 flex-1 items-center gap-1 rounded-md border border-dashed border-accent bg-canvas px-1 text-[0.68rem] font-bold leading-none text-accent ${context === 'month' ? 'calendar-month-milestone' : ''}`}
+    >
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden="true" />
+      {context === 'month' ? (
+        <>
+          <span className="calendar-milestone-count truncate">
+            +{milestones.length}<span className="sr-only"> {milestones.length === 1 ? 'milestone' : 'milestones'}</span>
+          </span>
+          <span className="calendar-milestone-label truncate">{fullLabel}</span>
+        </>
+      ) : (
+        <span className="truncate">{fullLabel}</span>
+      )}
+    </div>
+  )
+}
+
+function BookingOverflow({ count }: { count: number }) {
+  if (count === 0) return null
+  return (
+    <div className="flex h-5 min-w-0 flex-1 items-center rounded-md border border-line bg-paper px-1 text-[0.68rem] font-bold leading-none text-muted">
+      <span className="truncate">+{count} booking{count === 1 ? '' : 's'}</span>
+    </div>
   )
 }
 
@@ -356,9 +480,13 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
         {days.map((day) => {
           const key = keyFromDate(day)
           const dayItems = itemsByDate.get(key) ?? []
+          const appointmentItems = dayItems.filter((item): item is AppointmentItem => item.kind === 'appointment')
+          const milestoneItems = dayItems.filter((item): item is MilestoneItem => item.kind === 'milestone')
+          const visibleAppointments = appointmentItems.slice(0, 2)
+          const hiddenAppointmentCount = appointmentItems.length - visibleAppointments.length
           const outsideMonth = day.getMonth() !== anchor.getMonth()
           return (
-            <div key={key} className={`min-h-24 min-w-0 border-b border-r border-line p-1 last:border-r-0 sm:min-h-32 sm:p-1.5 md:min-h-36 ${outsideMonth ? 'bg-canvas/45' : ''}`}>
+            <div key={key} className={`max-h-52 min-h-24 min-w-0 overflow-hidden border-b border-r border-line px-0 py-1 last:border-r-0 sm:p-1.5 ${outsideMonth ? 'bg-canvas/45' : ''}`}>
               {/*
                 The whole cell width is the tap target, not a 44px circle: at
                 320px a column is only ~40px wide, so a fixed circle would
@@ -374,35 +502,24 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
                 {day.getDate()}
               </button>
               <div className="mt-1 space-y-1">
-                {dayItems.map((item, index) => {
+                {visibleAppointments.map((item) => {
                   const appointment = item.appointment
-                  if (item.kind === 'appointment') {
-                    const linked = Boolean(appointment.parentAppointmentId) || (childAppointments.get(appointment.id)?.length ?? 0) > 0
-                    return (
-                      <button
-                        key={`appointment-${appointment.id}`}
-                        type="button"
-                        onClick={() => onOpen(appointment)}
-                        className={`min-h-11 w-full min-w-0 rounded-lg border-l-4 px-1.5 py-1 text-left text-[0.68rem] font-bold leading-tight ${STATUS_STYLES[appointment.status]}`}
-                        aria-label={`${formatTime(appointment.startAt)}, ${clientName(clientsById.get(appointment.clientId))}${linked ? ', linked wedding set' : ''}`}
-                      >
-                        <span className="block truncate">{formatTime(appointment.startAt)}</span>
-                        <span className="block truncate">{linked ? '↔ ' : ''}{clientName(clientsById.get(appointment.clientId))}</span>
-                      </button>
-                    )
-                  }
+                  const linked = Boolean(appointment.parentAppointmentId) || (childAppointments.get(appointment.id)?.length ?? 0) > 0
                   return (
                     <button
-                      key={`${item.milestoneKind}-${appointment.id}-${index}`}
+                      key={`appointment-${appointment.id}`}
                       type="button"
                       onClick={() => onOpen(appointment)}
-                      className="flex min-h-11 w-full min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-accent bg-canvas px-1.5 py-1 text-left text-[0.62rem] font-bold leading-tight text-accent"
+                      className={`min-h-11 w-full min-w-0 rounded-lg border-l-4 px-1 py-1 text-left text-[0.68rem] font-bold leading-tight ${STATUS_STYLES[appointment.status]}`}
+                      aria-label={`${formatTime(appointment.startAt)}, ${clientName(clientsById.get(appointment.clientId))}${linked ? ', linked wedding set' : ''}`}
                     >
-                      <span className="h-2.5 w-2.5 shrink-0 rotate-45 border border-accent" aria-hidden="true" />
-                      <span className="line-clamp-3">{item.label}</span>
+                      <span className="block truncate">{formatTime(appointment.startAt)}</span>
+                      <span className="block truncate">{linked ? '↔ ' : ''}{clientName(clientsById.get(appointment.clientId))}</span>
                     </button>
                   )
                 })}
+                <BookingOverflow count={hiddenAppointmentCount} />
+                <MilestoneSummary milestones={milestoneItems} context="month" />
               </div>
             </div>
           )
@@ -412,7 +529,7 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
   )
 }
 
-function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppointments, onSelectDay, onOpen }: Parameters<typeof MonthGrid>[0]) {
+export function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppointments, onSelectDay, onOpen }: Parameters<typeof MonthGrid>[0]) {
   const anchor = dateFromKey(anchorKey)
   const days = eachDayOfInterval({
     start: startOfWeek(anchor, { weekStartsOn: 1 }),
@@ -420,15 +537,19 @@ function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppoi
   })
 
   return (
-    <div className="max-w-full overflow-x-auto rounded-2xl border border-line bg-paper/65 [-webkit-overflow-scrolling:touch]">
+    <div className="calendar-week-grid max-w-full overflow-x-auto rounded-2xl border border-line bg-paper/65 [-webkit-overflow-scrolling:touch]">
       {/* Seven columns of appointment detail cannot be read on a phone, so the
           week stacks into a day list below md and only becomes a grid above it. */}
       <div className="grid grid-cols-1 md:grid-cols-7">
         {days.map((day) => {
           const key = keyFromDate(day)
           const dayItems = itemsByDate.get(key) ?? []
+          const appointmentItems = dayItems.filter((item): item is AppointmentItem => item.kind === 'appointment')
+          const milestoneItems = dayItems.filter((item): item is MilestoneItem => item.kind === 'milestone')
+          const visibleAppointments = appointmentItems.slice(0, 2)
+          const hiddenAppointmentCount = appointmentItems.length - visibleAppointments.length
           return (
-            <div key={key} className="min-h-24 min-w-0 border-b border-line p-2 last:border-b-0 md:min-h-72 md:border-b-0 md:border-r md:p-1.5 md:last:border-r-0">
+            <div key={key} className="max-h-64 min-h-24 min-w-0 overflow-hidden border-b border-line p-2 last:border-b-0 md:min-h-72 md:border-b-0 md:border-r md:p-1.5 md:last:border-r-0">
               <button
                 type="button"
                 onClick={() => onSelectDay(key)}
@@ -440,16 +561,14 @@ function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppoi
                 <span className="mt-0.5 block text-base">{day.getDate()}</span>
               </button>
               <div className="mt-2 space-y-1.5">
-                {dayItems.map((item, index) => item.kind === 'appointment' ? (
+                {visibleAppointments.map((item) => (
                   <button key={`appointment-${item.appointment.id}`} type="button" onClick={() => onOpen(item.appointment)} className={`min-h-11 w-full rounded-lg border-l-4 p-1.5 text-left text-[0.68rem] font-bold leading-tight ${STATUS_STYLES[item.appointment.status]}`}>
                     {formatTime(item.appointment.startAt)}<br />{clientName(clientsById.get(item.appointment.clientId))}
                     {(item.appointment.parentAppointmentId || childAppointments.get(item.appointment.id)?.length) ? <span className="block">↔ Linked</span> : null}
                   </button>
-                ) : (
-                  <button key={`${item.milestoneKind}-${item.appointment.id}-${index}`} type="button" onClick={() => onOpen(item.appointment)} className="min-h-11 w-full rounded-lg border border-dashed border-accent p-1.5 text-left text-[0.62rem] font-bold leading-tight text-accent">
-                    ◆ {item.label}
-                  </button>
                 ))}
+                <BookingOverflow count={hiddenAppointmentCount} />
+                <MilestoneSummary milestones={milestoneItems} context="week" />
               </div>
             </div>
           )
@@ -1135,6 +1254,8 @@ export function Calendar() {
   const [view, setView] = useState<CalendarView>('month')
   const [anchorKey, setAnchorKey] = useState(todayKey)
   const [selectedKey, setSelectedKey] = useState(todayKey)
+  const [mobileDayOpen, setMobileDayOpen] = useState(false)
+  const mobileDayRef = useRef<HTMLDivElement>(null)
   const data = useLive<CalendarData>(async () => {
     const [appointments, clients, services, contracts, profile] = await Promise.all([
       storage.appointments.list({ orderBy: 'startAt' }),
@@ -1176,6 +1297,14 @@ export function Calendar() {
     setAnchorKey(key)
     setSelectedKey(key)
   }, [selectedAppointment])
+
+  useEffect(() => {
+    if (!mobileDayOpen || selectedAppointment) return
+    const frame = window.requestAnimationFrame(() => {
+      mobileDayRef.current?.scrollIntoView({ block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [mobileDayOpen, selectedAppointment, selectedKey])
 
   function openAppointment(appointment: Appointment) {
     setSelectedKey(romeDateKey(appointment.startAt))
@@ -1222,6 +1351,7 @@ export function Calendar() {
       servicesById={servicesById}
       childAppointments={childAppointments}
       onOpen={openAppointment}
+      onClose={() => setMobileDayOpen(false)}
     />
   )
 
@@ -1234,9 +1364,16 @@ export function Calendar() {
         itemsByDate={itemsByDate}
         clientsById={clientsById}
         childAppointments={childAppointments}
-        onViewChange={setView}
+        onViewChange={(nextView) => {
+          setView(nextView)
+          if (nextView === 'day') setMobileDayOpen(true)
+        }}
         onAnchorChange={(key) => { setAnchorKey(key); setSelectedKey(key) }}
-        onSelectDay={(key) => { setSelectedKey(key); setAnchorKey(key) }}
+        onSelectDay={(key) => {
+          setSelectedKey(key)
+          setAnchorKey(key)
+          setMobileDayOpen(true)
+        }}
         onOpen={openAppointment}
         onCreate={() => navigate('/calendar/new')}
       />
@@ -1245,15 +1382,25 @@ export function Calendar() {
         {detail}
       </aside>
 
-      {!selectedAppointment ? (
-        <div className="mt-7 min-w-0 lg:hidden">{detail}</div>
+      {!selectedAppointment && mobileDayOpen ? (
+        <div
+          ref={mobileDayRef}
+          className="mt-7 min-w-0 scroll-mt-[calc(1rem+env(safe-area-inset-top))] rounded-3xl border border-line bg-paper/75 p-4 sm:p-5 lg:hidden"
+        >
+          {/*
+            The phone day workspace stays in the app's normal scroll pane. A
+            fixed sheet would cover calendar content or the always-reachable
+            bottom navigation on a short iPhone landscape viewport.
+          */}
+          {detail}
+        </div>
       ) : (
-        <>
+        selectedAppointment ? <>
           <button type="button" onClick={() => navigate('/calendar')} className="fixed inset-0 z-40 bg-ink/25 lg:hidden" aria-label="Close appointment detail backdrop" />
           <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[calc(100dvh-env(safe-area-inset-top))] overflow-y-auto rounded-t-3xl border-t border-line bg-paper pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-[calc(1.25rem+env(safe-area-inset-left))] pr-[calc(1.25rem+env(safe-area-inset-right))] pt-5 shadow-2xl lg:hidden">
             {detail}
           </aside>
-        </>
+        </> : null
       )}
     </div>
   )

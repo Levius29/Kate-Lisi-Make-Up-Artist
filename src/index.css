@@ -95,6 +95,32 @@ body {
   display: none;
 }
 
+/*
+ * A phone-width month column cannot carry a useful reminder word. Keep only a
+ * dot and count there; the full, one-line label appears when the grid itself
+ * (not merely the viewport) is wide enough to make it readable.
+ */
+.calendar-milestone-label {
+  display: none;
+}
+
+/*
+ * Two thresholds, deliberately separate. A reminder label becomes readable at 34rem, but
+ * "Wednesday" set in caps with tracking needs the grid to reach 42rem before it stops
+ * colliding with "Thursday". They were briefly written as one 34rem query, which brought back
+ * the WEDNESDAYTHURSDAY overlap in the 592-624px band — invisible at every device size in the
+ * §10 matrix, and found only by sweeping every width from 320 to 1024. Do not merge them.
+ */
+@container (min-width: 34rem) {
+  .calendar-month-milestone .calendar-milestone-count {
+    display: none;
+  }
+
+  .calendar-month-milestone .calendar-milestone-label {
+    display: inline;
+  }
+}
+
 @container (min-width: 42rem) {
   .calendar-weekday-short {
     display: none;
@@ -102,6 +128,15 @@ body {
 
   .calendar-weekday-full {
     display: inline;
+  }
+}
+
+/* Seven 44px tap columns fit at 320px only when the grid uses the page gutter. */
+@media (max-width: 359px) {
+  .calendar-month-grid {
+    width: calc(100% + 3rem);
+    max-width: none;
+    margin-inline: -1.5rem;
   }
 }
 
