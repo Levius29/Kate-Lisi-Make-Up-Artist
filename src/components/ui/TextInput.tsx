@@ -1,12 +1,16 @@
-import type { ComponentProps } from 'react'
+import { forwardRef, type ComponentProps } from 'react'
 
 interface TextInputProps extends ComponentProps<'input'> {
   hasError?: boolean
 }
 
-export function TextInput({ className = '', hasError, ...props }: TextInputProps) {
+export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function TextInput(
+  { className = '', hasError, ...props },
+  ref,
+) {
   return (
     <input
+      ref={ref}
       className={`min-h-11 w-full min-w-0 rounded-xl border bg-paper px-3.5 py-2.5 text-base leading-6 text-ink outline-none transition-colors placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/15 disabled:opacity-60 ${
         hasError ? 'border-red-700' : 'border-line'
       } ${className}`}
@@ -14,7 +18,7 @@ export function TextInput({ className = '', hasError, ...props }: TextInputProps
       {...props}
     />
   )
-}
+})
 
 interface TextAreaProps extends ComponentProps<'textarea'> {
   hasError?: boolean

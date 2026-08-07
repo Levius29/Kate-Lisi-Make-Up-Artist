@@ -280,6 +280,41 @@ export function Settings() {
       <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
+            <h2 className="font-display text-2xl leading-tight text-ink">Bridal timeline</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+              Work backwards from a ceremony and export a planner-ready running schedule.
+            </p>
+          </div>
+          <Link
+            to="/timeline"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-accent px-4 text-sm font-semibold text-accent sm:w-auto"
+          >
+            Open calculator
+          </Link>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Data safety</p>
+            <h2 className="mt-1 font-display text-2xl leading-tight text-ink">Backup &amp; restore</h2>
+            <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-ink">
+              Lose the phone with no backup, lose everything.
+            </p>
+          </div>
+          <Link
+            to="/backup"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-accent px-4 text-sm font-semibold text-paper sm:w-auto"
+          >
+            Open backup
+          </Link>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
             <h2 className="font-display text-2xl leading-tight text-ink">Services catalogue</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
               Manage prices, cancellation tiers and recall message templates.

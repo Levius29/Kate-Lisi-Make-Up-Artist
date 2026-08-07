@@ -830,6 +830,16 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
         <DetailRow label="Balance due">{formatFullDate(appointment.balanceDueAt ?? appointment.startAt)}</DetailRow>
       </dl>
 
+      {appointment.ceremonyTime ? (
+        <section className="mt-5 rounded-2xl border border-accent/35 bg-canvas p-4">
+          <h3 className="font-display text-xl text-ink">Bridal timeline</h3>
+          <p className="mt-1 text-sm leading-6 text-muted">Ceremony time and head count are ready in the backwards calculator.</p>
+          <Link to={`/timeline?appointment=${encodeURIComponent(appointment.id)}`} className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-accent px-4 text-sm font-bold text-accent sm:w-auto">
+            Calculate timeline
+          </Link>
+        </section>
+      ) : null}
+
       <ContractPanel appointment={appointment} contract={contract} profile={profile} />
 
       {(parent || children.length > 0) ? (

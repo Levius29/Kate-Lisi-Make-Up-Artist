@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { BackupReminder } from './BackupReminder'
+
 const destinations = [
   { label: 'Today', to: '/', end: true },
   { label: 'Calendar', to: '/calendar' },
@@ -77,6 +79,7 @@ export function AppShell() {
 
       <div className="app-scroll min-w-0" data-app-scroll>
         <main className="mx-auto w-full max-w-3xl pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
+          <BackupReminder />
           <Outlet />
         </main>
       </div>

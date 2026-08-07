@@ -12,6 +12,7 @@ import {
 import { eurosToCents } from '../pages/settingsForm'
 import type { BusinessProfile } from '../types'
 import { DexieStorageAdapter } from './DexieStorageAdapter'
+import { decryptStorageDump, encryptStorageDump } from '../backup/crypto'
 
 describe('DexieStorageAdapter', () => {
   const adapter = new DexieStorageAdapter()
@@ -330,5 +331,154 @@ describe('DexieStorageAdapter', () => {
         paidAt: '2030-08-01T10:00:00.000Z',
       },
     ])
+  })
+
+  it('exports, wipes, and restores every record including snapshots and recalls', async () => {
+    const profile = await adapter.profile.save({
+      businessName: 'Backup Test Studio',
+      registeredAddress: 'Example registered address, Rome, Italy',
+      email: 'backup@example.invalid',
+      vatNumber: '12345678901',
+      taxCode: 'RSSMRA80A01H501U',
+      regime: 'forfettario',
+      atecoCode: '96.02.02',
+      invoicePrefix: 'INV-',
+      nextInvoiceNumber: 2,
+      contractPrefix: 'CTR-',
+      nextContractNumber: 2,
+      iban: 'IT60X0542811101000000123456',
+      bicSwift: 'BPPIITRRXXX',
+      accountHolder: 'Backup Test Studio',
+      defaultDepositPercent: 30,
+      courtOfJurisdiction: 'Rome, Italy',
+      annualRevenueTarget: 8_500_000,
+      stampDutyDeadlines: [],
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    })
+    const client = await adapter.clients.create({
+      firstName: 'Backup',
+      lastName: 'Fixture',
+      nationality: 'Test',
+      timezone: 'Europe/Rome',
+      phoneE164: '+390000000000',
+      email: 'client@example.invalid',
+      addressLine: 'Example client address',
+      city: 'Rome',
+      country: 'Italy',
+      allergies: 'Test allergy',
+      patchTestDone: true,
+      patchTestDate: '2030-05-01T10:00:00.000Z',
+      productPreferences: { halal: true, vegan: false, crueltyFree: true, other: '' },
+      imageReleaseLevel: 'face_obscured',
+      gdprConsentAt: '2030-01-01T10:00:00.000Z',
+      notes: 'Synthetic test record.',
+    })
+    const service = await adapter.services.create({
+      name: 'Backup bridal service',
+      description: 'Synthetic service for restore coverage.',
+      durationMinutes: 180,
+      basePrice: 50_000,
+      defaultDepositPercent: 30,
+      cancellationTiers: [{ daysBefore: 0, retainPercent: 100 }],
+      recallTemplates: [{ daysBefore: 7, channel: 'whatsapp', messageTemplate: 'Test reminder' }],
+      requiresTrial: true,
+      requiresPatchTest: true,
+      contractTemplateId: 'standard-bridal',
+      active: true,
+    })
+    const appointment = await adapter.appointments.create({
+      clientId: client.id,
+      serviceId: service.id,
+      status: 'confirmed',
+      startAt: '2030-09-14T10:00:00.000Z',
+      endAt: '2030-09-14T13:00:00.000Z',
+      ceremonyTime: '2030-09-14T13:00:00.000Z',
+      locationName: 'Example venue',
+      locationAddress: 'Example venue address, Rome',
+      peopleCount: 4,
+      lineItems: [{ label: 'Bridal service', quantity: 1, unitPrice: 50_000 }],
+      subtotal: 50_000,
+      total: 50_000,
+      depositPercent: 30,
+      depositAmount: 15_000,
+      payments: [{ type: 'deposit', amount: 15_000, method: 'wise', paidAt: '2030-01-10T10:00:00.000Z' }],
+      cancellationCutoffs: [{ date: '2030-08-14T10:00:00.000Z', retainPercent: 50 }],
+      balanceDueAt: '2030-09-13T22:00:00.000Z',
+      recalls: [{
+        id: 'nested-recall',
+        daysBefore: 7,
+        channel: 'whatsapp',
+        messageTemplate: 'Nested recall survives.',
+        dueAt: '2030-09-07T10:00:00.000Z',
+        sentAt: '2030-09-07T11:00:00.000Z',
+      }],
+      internalNotes: 'Nested appointment data.',
+    })
+    const contract = await adapter.contracts.create({
+      contractNumber: 'CTR-1',
+      appointmentId: appointment.id,
+      clientSnapshot: structuredClone(client),
+      businessSnapshot: structuredClone(profile),
+      serviceSnapshot: structuredClone(service),
+      financialSnapshot: {
+        startAt: appointment.startAt,
+        locationName: appointment.locationName,
+        locationAddress: appointment.locationAddress,
+        peopleCount: appointment.peopleCount,
+        lineItems: structuredClone(appointment.lineItems),
+        subtotal: appointment.subtotal,
+        total: appointment.total,
+        depositPercent: appointment.depositPercent,
+        depositAmount: appointment.depositAmount,
+        balanceDueAt: appointment.balanceDueAt!,
+        cancellationCutoffs: structuredClone(appointment.cancellationCutoffs),
+      },
+      language: 'en',
+      templateVersion: 'test-v1',
+      generatedAt: '2030-01-02T10:00:00.000Z',
+    })
+    const invoice = await adapter.invoices.create({
+      invoiceNumber: 'INV-1',
+      appointmentId: appointment.id,
+      clientId: client.id,
+      clientSnapshot: structuredClone(client),
+      businessSnapshot: structuredClone(profile),
+      issuedAt: '2030-09-14T14:00:00.000Z',
+      serviceDate: appointment.startAt,
+      recipientCode: 'XXXXXXX',
+      clientTaxCode: '',
+      lineItems: [{ label: 'Bridal service', quantity: 1, unitPrice: 50_000, amount: 50_000 }],
+      subtotal: 50_000,
+      stampDuty: 200,
+      total: 50_200,
+      flatRateWording: 'Synthetic test wording.',
+    })
+    await adapter.meta.set('restore-test-meta', { nested: ['kept'] })
+
+    const original = await adapter.exportAll()
+    const encrypted = await encryptStorageDump(original, 'restore test passphrase')
+
+    await db.delete()
+    await db.open()
+    expect(await adapter.clients.list({ includeDeleted: true })).toEqual([])
+
+    const decrypted = await decryptStorageDump(encrypted, 'restore test passphrase')
+    await adapter.importAll(decrypted, 'replace')
+    const restored = await adapter.exportAll()
+
+    expect(restored.profile).toEqual(original.profile)
+    expect(restored.clients).toEqual(original.clients)
+    expect(restored.services).toEqual(original.services)
+    expect(restored.appointments).toEqual(original.appointments)
+    expect(restored.contracts).toEqual(original.contracts)
+    expect(restored.invoices).toEqual(original.invoices)
+    expect(restored.meta).toEqual(original.meta)
+    expect(restored.appointments[0]?.recalls[0]).toMatchObject({
+      id: 'nested-recall',
+      messageTemplate: 'Nested recall survives.',
+      sentAt: '2030-09-07T11:00:00.000Z',
+    })
+    expect(restored.contracts[0]?.clientSnapshot).toEqual(contract.clientSnapshot)
+    expect(restored.invoices[0]?.businessSnapshot).toEqual(invoice.businessSnapshot)
   })
 })
