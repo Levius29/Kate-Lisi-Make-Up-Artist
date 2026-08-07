@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextArea, TextInput } from '../components/ui/TextInput'
 import {
@@ -299,18 +300,11 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
 
   return (
     <div className="mx-auto min-w-0 max-w-3xl">
-      <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          {initialService ? 'Edit service' : 'New service'}
-        </p>
-        <h1 className="mt-3 break-words font-display text-4xl leading-tight text-ink md:text-5xl">
-          {initialService ? initialService.name : 'Service details'}
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          <span className="font-semibold text-accent" aria-hidden="true">*</span>{' '}
-          Required field
-        </p>
-      </header>
+      <PageHeader
+        eyebrow={initialService ? 'Edit service' : 'New service'}
+        title={initialService ? initialService.name : 'Service details'}
+        subtitle={<><span className="font-semibold text-accent" aria-hidden="true">*</span>{' '}Required field</>}
+      />
 
       <form className="min-w-0 space-y-6" noValidate onSubmit={handleSubmit}>
         <FormSection
@@ -359,7 +353,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
 
         <FormSection
           title="Pricing"
-          description="Amounts are entered in euros here and saved as exact integer cents on this device."
+          description="Enter prices in euros."
         >
           <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
             <ConnectedInput
@@ -404,7 +398,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
 
         <FormSection
           title="Booking defaults"
-          description="Starting values for future bookings. A booking can still override its deposit percentage."
+          description="Starting values for future bookings. Each booking can still use a different deposit percentage."
         >
           <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
             <ConnectedInput
@@ -419,14 +413,14 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
             />
             <ConnectedInput
               field="contractTemplateId"
-              label="Contract template ID"
+              label="Contract wording"
               value={draft.contractTemplateId}
               errors={errors}
               onValueChange={updateField}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              helper="Identifier only; contract generation is built in Stage 6."
+              helper="Used to choose the matching contract wording for this service."
               required
             />
           </div>
@@ -466,7 +460,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
 
         <FormSection
           title="Cancellation ladder"
-          description="A tier applies when notice is at least its day threshold. Tiers are saved in descending order and the first match wins."
+          description="A row applies when the client cancels with at least that much notice. The longest notice she still meets is the one that counts."
         >
           {errors.cancellationTiers ? (
             <ErrorText id="service-cancellationTiers" className="mb-4" tabIndex={-1}>
@@ -622,7 +616,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
                     </Field>
 
                     <aside className="min-w-0 rounded-2xl border border-line bg-paper/75 p-4">
-                      <p className="text-sm font-semibold text-ink">Available merge fields</p>
+                      <p className="text-sm font-semibold text-ink">Details you can insert</p>
                       <p className="mt-1 text-sm leading-5 text-muted">Tap one to add it to the message.</p>
                       <div className="mt-3 flex min-w-0 flex-wrap gap-2">
                         {mergeFieldNames.map((name) => (
@@ -640,7 +634,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
                   </div>
 
                   <div className="mt-4 min-w-0 rounded-2xl border border-line bg-paper/75 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Live sample preview</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Message preview</p>
                     <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-ink">
                       {recall.messageTemplate
                         ? substituteMergeFields(recall.messageTemplate, SAMPLE_MERGE_VALUES)
@@ -718,17 +712,13 @@ function ServiceDetail({
 
   return (
     <article className="mx-auto min-w-0 max-w-3xl">
-      <header className="border-b border-line pb-7">
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Service</p>
-            <h1 className="mt-3 break-words font-display text-4xl leading-tight text-ink md:text-5xl">
-              {service.name}
-            </h1>
-            <p className="mt-3 inline-flex rounded-full border border-line bg-paper px-3 py-1 text-sm font-semibold text-muted">
-              {service.active ? 'Active' : 'Inactive'}
-            </p>
-          </div>
+      <PageHeader
+        eyebrow="Service"
+        title={service.name}
+        subtitle={<span className="inline-flex rounded-full border border-line bg-paper px-3 py-1 text-sm font-semibold text-muted">{service.active ? 'Active' : 'Inactive'}</span>}
+        bordered
+        spacing="none"
+        action={
           <div className="flex flex-wrap gap-2">
             <Link
               to={`/services/${service.id}/edit`}
@@ -747,13 +737,13 @@ function ServiceDetail({
               {isChangingActive ? 'Saving…' : service.active ? 'Deactivate' : 'Reactivate'}
             </button>
           </div>
-        </div>
-        {statusError ? (
-          <p className="mt-3 text-sm font-semibold text-danger-text" role="status">
-            {statusError}
-          </p>
-        ) : null}
-      </header>
+        }
+      />
+      {statusError ? (
+        <p className="mt-3 text-sm font-semibold text-danger-text" role="status">
+          {statusError}
+        </p>
+      ) : null}
 
       <section className="mt-6 min-w-0 rounded-3xl border border-line bg-paper/70 p-5 md:p-6">
         <h2 className="font-display text-2xl text-ink">Catalogue details</h2>
@@ -768,7 +758,7 @@ function ServiceDetail({
             ['Default deposit', `${service.defaultDepositPercent}%`],
             ['Requires trial', service.requiresTrial ? 'Yes' : 'No'],
             ['Requires patch test', service.requiresPatchTest ? 'Yes' : 'No'],
-            ['Contract template ID', service.contractTemplateId],
+            ['Contract wording', service.contractTemplateId],
           ].map(([label, value]) => (
             <div key={label} className="min-w-0 border-b border-line pb-3">
               <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</dt>
@@ -780,7 +770,7 @@ function ServiceDetail({
 
       <section className="mt-6 min-w-0 rounded-3xl border border-line bg-paper/70 p-5 md:p-6">
         <h2 className="font-display text-2xl text-ink">Cancellation ladder</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">First matching threshold wins.</p>
+        <p className="mt-2 text-sm leading-6 text-muted">The longest notice the client still meets is the one that applies.</p>
         <div className="mt-4 space-y-3">
           {service.cancellationTiers.map((tier) => (
             <div key={tier.daysBefore} className="min-w-0 rounded-2xl border border-line bg-canvas/55 px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -850,16 +840,13 @@ function ServiceList({ services, onSeed }: { services: Service[] | undefined; on
 
   return (
     <div className="mx-auto min-w-0 max-w-3xl">
-      <header className="mb-8 md:mb-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Settings</p>
-        <div className="mt-3 flex min-w-0 flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl">Services catalogue</h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-muted">Prices, cancellation terms and client recall messages, kept on this device.</p>
-          </div>
-          <Link to="/services/new" className="inline-flex min-h-12 items-center rounded-xl bg-accent px-5 text-base font-semibold text-paper">Add service</Link>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Catalogue"
+        title="Services catalogue"
+        subtitle="Prices, cancellation terms and client recall messages."
+        subtitleClassName="md:text-base md:leading-7"
+        action={<Link to="/services/new" className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-paper md:min-h-12 md:px-5 md:text-base">Add service</Link>}
+      />
 
       {services === undefined ? (
         <p className="rounded-3xl border border-dashed border-line px-5 py-12 text-center text-sm text-muted" aria-busy="true">Loading services…</p>
@@ -956,9 +943,8 @@ export function Services() {
       ) : route.serviceId && selectedState === undefined ? (
         <p className="text-sm text-muted" aria-busy="true">Loading service…</p>
       ) : route.serviceId && !selectedService ? (
-        <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
-          <h1 className="font-display text-3xl text-ink">Service not found</h1>
-          <p className="mt-2 text-sm leading-6 text-muted">This record is not available on this device.</p>
+        <div className="rounded-3xl border border-dashed border-line px-6 py-8 text-left md:py-12">
+          <PageHeader eyebrow="Catalogue" title="Service not found" subtitle="This service may have been removed." spacing="none" />
         </div>
       ) : selectedService ? (
         <ServiceDetail service={selectedService} onToggleActive={toggleActive} />

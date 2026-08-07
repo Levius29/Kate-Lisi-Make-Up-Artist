@@ -11,6 +11,7 @@ import {
 } from '../backup/crypto'
 import { presentBackupFile } from '../backup/delivery'
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { TextInput } from '../components/ui/TextInput'
 import { formatFullDateTimeWithZone } from '../lib/dates'
 import { storage, type StorageDump } from '../storage'
@@ -168,7 +169,7 @@ export function Backup() {
       setConfirmed(false)
       if (fileInput.current) fileInput.current.value = ''
     } catch {
-      setRestoreError('Nothing was restored. The current database is unchanged; try again.')
+      setRestoreError('Nothing was restored. Your current records are unchanged; try again.')
     } finally {
       setRestoreBusy(false)
     }
@@ -176,27 +177,22 @@ export function Backup() {
 
   return (
     <div className="mx-auto w-full max-w-3xl min-w-0">
-      <header className="mb-8 border-b border-line pb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Data safety</p>
-            <h1 className="mt-2 font-display text-4xl leading-tight text-ink md:text-5xl">Backup &amp; restore</h1>
-          </div>
-          <Link to="/settings" className="inline-flex min-h-11 items-center text-sm font-bold text-accent">Back to settings</Link>
-        </div>
-        <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-ink">
-          Lose the phone with no backup, lose everything.
-        </p>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          The encrypted file contains all data on this device. Save it to Drive, iCloud or Files from the share sheet, and keep its passphrase somewhere separate.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Data safety"
+        title={<>Backup &amp; restore</>}
+        subtitle="Create an encrypted file, then keep it and the passphrase in separate safe places."
+        bordered
+        action={<Link to="/settings" aria-label="Back to settings" className="inline-flex min-h-11 items-center text-sm font-bold text-accent">Settings</Link>}
+      />
 
       <section className="rounded-3xl border border-accent bg-paper p-4 sm:p-6 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Export all</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Create backup</p>
         <h2 className="mt-2 font-display text-3xl leading-tight">Create one encrypted backup</h2>
         <p className="mt-3 text-sm leading-6 text-muted">
           This includes your profile, clients, services, appointments, contracts, invoices and settings. The passphrase cannot be recovered by the app.
+        </p>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          When the file is ready, save it from the share sheet to Files, iCloud Drive or Google Drive. A copy that never leaves this phone is not a backup.
         </p>
 
         <form className="mt-6 space-y-5" onSubmit={handleExport} noValidate>
@@ -228,16 +224,16 @@ export function Backup() {
           {exportError ? <ErrorText>{exportError}</ErrorText> : null}
           {exportMessage ? <p className="text-sm font-semibold leading-6 text-success-text" role="status">{exportMessage}</p> : null}
           <button type="submit" disabled={exportBusy} className="min-h-12 w-full rounded-xl bg-accent px-5 text-base font-bold text-paper disabled:opacity-60 sm:w-auto">
-            {exportBusy ? 'Encrypting all data…' : 'Export All'}
+            {exportBusy ? 'Creating backup…' : 'Create backup'}
           </button>
         </form>
       </section>
 
       <section className="mt-8 rounded-3xl border border-line bg-paper/75 p-4 sm:p-6 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Import / restore</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Restore</p>
         <h2 className="mt-2 font-display text-3xl leading-tight">Replace this device from a backup</h2>
         <p className="mt-3 text-sm leading-6 text-muted">
-          Nothing is written until the file is decrypted, you see both record counts, and you confirm the replacement.
+          Nothing changes until the file is unlocked, you review the item counts, and you confirm the replacement.
         </p>
 
         <form className="mt-6 space-y-5" onSubmit={prepareRestore} noValidate>
@@ -275,7 +271,7 @@ export function Backup() {
               <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-warning-line">
-                    <th className="px-2 py-3 font-bold">Record type</th>
+                    <th className="px-2 py-3 font-bold">Type</th>
                     <th className="px-2 py-3 text-right font-bold">In backup</th>
                     <th className="px-2 py-3 text-right font-bold">On this device now</th>
                   </tr>

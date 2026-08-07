@@ -107,7 +107,7 @@ export function InvoicePanel({
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Accountant hand-off</p>
         <h2 id="invoice-heading" className="mt-2 font-display text-3xl leading-tight text-ink">Forfettario invoices</h2>
         <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-ink">
-          This app does not transmit invoices to the SdI. Issuing here creates a local record and clean files for the accountant; it does not file or send anything.
+          This app does not transmit invoices to the SdI. Issuing here saves the invoice and creates clean files for the accountant; it does not file or send anything.
         </p>
         <p className="mt-3 max-w-2xl text-xs leading-5 text-muted">
           No VAT is charged. Fiscal wording: “{FLAT_RATE_WORDING}”
@@ -163,7 +163,7 @@ export function InvoicePanel({
         >
           {exporting === 'json' ? 'Preparing…' : 'Export JSON'}
         </button>
-        <p className="w-full text-xs leading-5 text-muted">On iPhone and iPad, the share sheet is offered when the device accepts files. Otherwise the file downloads as a blob.</p>
+        <p className="w-full text-xs leading-5 text-muted">On iPhone and iPad, the share sheet opens when available. Otherwise the file downloads directly.</p>
       </div>
 
       <div className="min-h-7" aria-live="polite">
@@ -197,7 +197,7 @@ export function InvoicePanel({
       <section className="mt-7 min-w-0 border-t border-line pt-5" aria-labelledby="invoice-register-heading">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.15em] text-muted">Saved locally</p>
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-muted">Invoices</p>
             <h3 id="invoice-register-heading" className="mt-1 font-display text-2xl text-ink">Invoice register</h3>
           </div>
           <span className="flex h-8 min-w-8 items-center justify-center rounded-full border border-line bg-paper px-2 text-sm font-bold text-accent">{invoices.length}</span>

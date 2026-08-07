@@ -83,6 +83,28 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/*
+ * The calendar may be full-width or one half of an iPad master-detail view.
+ * Weekday wording follows the grid's own space, not the device viewport.
+ */
+.calendar-month-grid {
+  container-type: inline-size;
+}
+
+.calendar-weekday-full {
+  display: none;
+}
+
+@container (min-width: 42rem) {
+  .calendar-weekday-short {
+    display: none;
+  }
+
+  .calendar-weekday-full {
+    display: inline;
+  }
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { TextInput } from '../components/ui/TextInput'
 import { romeDateKeyToUtc } from '../lib/appointmentSchedule'
 import { formatFullDate, formatTimeWithZone } from '../lib/dates'
@@ -168,20 +169,15 @@ export function Timeline() {
 
   return (
     <div className="mx-auto w-full max-w-3xl min-w-0">
-      <header className="mb-8 border-b border-line pb-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Planning tool</p>
-            <h1 className="mt-2 font-display text-4xl leading-tight text-ink md:text-5xl">Bridal timeline</h1>
-          </div>
-          {source?.appointment ? (
+      <PageHeader
+        eyebrow="Planning tool"
+        title="Bridal timeline"
+        subtitle="Work backwards from the ceremony. The bride is scheduled last, then the buffer protects the ceremony time."
+        bordered
+        action={source?.appointment ? (
             <Link to={`/calendar/${source.appointment.id}`} className="inline-flex min-h-11 items-center text-sm font-bold text-accent">Back to appointment</Link>
-          ) : null}
-        </div>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-          Work backwards from the ceremony. The bride is scheduled last, then the buffer protects the ceremony time.
-        </p>
-      </header>
+          ) : undefined}
+      />
 
       {linkedAppointmentMissingCeremony ? (
         <p className="mb-6 rounded-2xl border border-warning-line bg-warning-surface p-4 text-sm font-semibold leading-6 text-warning-text">

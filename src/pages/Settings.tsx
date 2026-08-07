@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { BackupStatusLine } from '../components/BackupReminder'
 import {
   ErrorText,
   Field,
@@ -8,6 +9,7 @@ import {
   HelperText,
 } from '../components/ui/FormField'
 import { SelectInput } from '../components/ui/SelectInput'
+import { PageHeader } from '../components/ui/PageHeader'
 import { TextArea, TextInput } from '../components/ui/TextInput'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
@@ -232,33 +234,24 @@ export function Settings() {
   if (!isHydrated) {
     return (
       <div className="mx-auto w-full max-w-3xl" aria-busy="true">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          Settings
-        </p>
-        <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
-          Business profile
-        </h1>
-        <p className="mt-4 text-base leading-7 text-muted">Loading the profile saved on this device…</p>
+        <PageHeader
+          eyebrow="Settings"
+          title="Business profile"
+          subtitle="Loading your business profile…"
+          subtitleClassName="md:text-base md:leading-7"
+        />
       </div>
     )
   }
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <header className="mb-8 md:mb-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          Settings
-        </p>
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl">
-              Business profile
-            </h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-muted">
-              The details used later for contracts, invoices, payments and business totals.
-            </p>
-          </div>
-          <p
+      <PageHeader
+        eyebrow="Settings"
+        title="Business profile"
+        subtitle="Details for contracts, invoices, payments and business totals."
+        subtitleClassName="md:text-base md:leading-7"
+        action={<p
             className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
               isDirty
                 ? 'border-warning-line bg-warning-surface text-warning-text'
@@ -267,15 +260,11 @@ export function Settings() {
             role="status"
           >
             {isDirty ? 'Unsaved changes' : savedProfile ? 'Up to date' : 'Not saved yet'}
-          </p>
-        </div>
-        <p className="mt-4 text-sm text-muted">
-          <span className="font-semibold text-accent" aria-hidden="true">
-            *
-          </span>{' '}
-          Required field
-        </p>
-      </header>
+          </p>}
+        footer={<p className="mt-3 text-sm text-muted md:mt-4">
+          <span className="font-semibold text-accent" aria-hidden="true">*</span>{' '}Required field
+        </p>}
+      />
 
       <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
@@ -302,6 +291,7 @@ export function Settings() {
             <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-ink">
               Lose the phone with no backup, lose everything.
             </p>
+            <BackupStatusLine />
           </div>
           <Link
             to="/backup"
@@ -334,7 +324,7 @@ export function Settings() {
           <div className="min-w-0">
             <h2 className="font-display text-2xl leading-tight text-ink">Issued contracts</h2>
             <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-              Open immutable contract records and generate their PDFs again at any time.
+              Open completed contract records and create their PDFs again at any time.
             </p>
           </div>
           <Link
@@ -466,7 +456,7 @@ export function Settings() {
 
         <FormSection
           title="Numbering"
-          description="Starting points for future sequential invoice and contract numbers. Saving this page never increments them."
+          description="The next invoice and contract numbers. Numbering has to stay unbroken, so a number is taken only when you issue the document — never by saving this page."
         >
           <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
             <ConnectedTextInput
@@ -606,7 +596,7 @@ export function Settings() {
               onValueChange={updateField}
               inputMode="decimal"
               enterKeyHint="next"
-              helper="Shown in euros here and stored as exact integer cents."
+              helper="Shown in euros."
             />
             <ConnectedTextInput
               field="courtOfJurisdiction"

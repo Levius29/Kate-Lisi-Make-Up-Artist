@@ -21,7 +21,16 @@ const VIEWPORTS = [
   { name: 'ipad-splitview-narrow', width: 320, height: 1024 },
 ];
 
-const ROUTES = process.env.ROUTES ? process.env.ROUTES.split(',') : ['', '#/settings'];
+/*
+ * Every route, not a sample. This defaulted to ['', '#/settings'] and a full run printed
+ * "20/20 checks passed" — green, and blind to the other nine screens. A checker that reports
+ * success over a fifth of the app is worse than no checker.
+ */
+const DEFAULT_ROUTES = [
+  '', '#/calendar', '#/calendar/new', '#/clients', '#/clients/new', '#/money',
+  '#/settings', '#/services', '#/backup', '#/timeline', '#/settings/contracts',
+];
+const ROUTES = process.env.ROUTES ? process.env.ROUTES.split(',') : DEFAULT_ROUTES;
 
 const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',

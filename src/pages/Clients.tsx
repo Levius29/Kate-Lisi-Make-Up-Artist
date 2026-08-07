@@ -8,6 +8,7 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { TextArea, TextInput } from '../components/ui/TextInput'
 import { formatClientLocalTime, formatFullDate } from '../lib/dates'
 import { storage } from '../storage'
@@ -254,18 +255,12 @@ function ClientEditor({ initialClient, onCancel, onSaved }: ClientEditorProps) {
 
   return (
     <div className="min-w-0">
-      <header className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-          {initialClient ? 'Edit client' : 'New client'}
-        </p>
-        <h1 className="mt-3 break-words font-display text-4xl leading-tight text-ink md:text-5xl lg:text-4xl">
-          {initialClient ? `${initialClient.firstName} ${initialClient.lastName}` : 'Client details'}
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          <span className="font-semibold text-accent" aria-hidden="true">*</span>{' '}
-          Required field
-        </p>
-      </header>
+      <PageHeader
+        eyebrow={initialClient ? 'Edit client' : 'New client'}
+        title={initialClient ? `${initialClient.firstName} ${initialClient.lastName}` : 'Client details'}
+        subtitle={<><span className="font-semibold text-accent" aria-hidden="true">*</span>{' '}Required field</>}
+        compactAtRail
+      />
 
       <form className="space-y-6" noValidate onSubmit={handleSubmit}>
         <FormSection
@@ -611,17 +606,14 @@ function ClientDetail({ client, instant, onArchive, onRestore }: ClientDetailPro
 
   return (
     <article className="min-w-0">
-      <header className="border-b border-line pb-7">
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Client</p>
-            <h1 className="mt-3 break-words font-display text-4xl leading-tight text-ink md:text-5xl lg:text-4xl">
-              {client.firstName} {client.lastName}
-            </h1>
-            {client.deletedAt ? (
-              <p className="mt-3 inline-flex rounded-full border border-line bg-paper px-3 py-1 text-sm font-semibold text-muted">Archived</p>
-            ) : null}
-          </div>
+      <PageHeader
+        eyebrow="Client"
+        title={`${client.firstName} ${client.lastName}`}
+        subtitle={client.deletedAt ? <span className="inline-flex rounded-full border border-line bg-paper px-3 py-1 text-sm font-semibold text-muted">Archived</span> : undefined}
+        bordered
+        spacing="none"
+        compactAtRail
+        action={
           <div className="flex flex-wrap gap-2">
             {!client.deletedAt ? (
               <Link
@@ -643,8 +635,8 @@ function ClientDetail({ client, instant, onArchive, onRestore }: ClientDetailPro
               {client.deletedAt ? 'Restore client' : 'Archive client'}
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <section className="mt-6 rounded-3xl border border-warning-line bg-warning-surface p-5 md:p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning-text">Safety</p>
@@ -713,21 +705,18 @@ function ClientMaster({
 }: ClientMasterProps) {
   return (
     <section className="min-w-0 lg:rounded-3xl lg:border lg:border-line lg:bg-paper/55 lg:p-5">
-      <header className="mb-7">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Studio</p>
-        <div className="mt-3 flex min-w-0 items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl lg:text-4xl">Clients</h1>
-            <p className="mt-2 text-sm leading-6 text-muted">Reusable details, kept on this device.</p>
-          </div>
-          <Link
+      <PageHeader
+        eyebrow="Studio"
+        title="Clients"
+        subtitle="Client details ready for future bookings."
+        compactAtRail
+        action={<Link
             to="/clients/new"
             className="inline-flex min-h-11 shrink-0 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-paper"
           >
             Add client
-          </Link>
-        </div>
-      </header>
+          </Link>}
+      />
 
       <Field>
         <FieldLabel htmlFor="client-search">Search clients</FieldLabel>
@@ -879,9 +868,8 @@ export function Clients() {
         ) : route.clientId && selectedState === undefined ? (
           <p className="text-sm text-muted" aria-busy="true">Loading client…</p>
         ) : route.clientId && !selectedClient ? (
-          <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
-            <h1 className="font-display text-3xl text-ink">Client not found</h1>
-            <p className="mt-2 text-sm leading-6 text-muted">This record may no longer be available on this device.</p>
+          <div className="rounded-3xl border border-dashed border-line px-6 py-8 text-left md:py-12">
+            <PageHeader eyebrow="Clients" title="Client not found" subtitle="This client may have been archived or removed." spacing="none" />
           </div>
         ) : selectedClient ? (
           <ClientDetail

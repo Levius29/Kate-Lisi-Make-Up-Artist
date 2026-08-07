@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextArea, TextInput } from '../components/ui/TextInput'
 import { ContractIssueError, issueContract } from '../contract/issue'
@@ -334,7 +335,7 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
   const weekdays = days.slice(0, 7)
 
   return (
-    <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-line bg-paper/65 [-webkit-overflow-scrolling:touch]">
+    <div className="calendar-month-grid max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-line bg-paper/65 [-webkit-overflow-scrolling:touch]">
       {/*
         No minimum width: month is the default view on a phone (SPEC.md §4.1), so
         all seven columns must be visible at 320px. Pushing the grid into its own
@@ -347,8 +348,8 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
           const name = longDateForKey(key).split(' ')[0] ?? ''
           return (
             <div key={key} className="border-b border-line px-1 py-3 text-center text-[0.65rem] font-bold uppercase tracking-wide text-muted sm:text-xs">
-              <span className="md:hidden lg:inline xl:hidden">{name.slice(0, 3)}</span>
-              <span className="hidden md:inline lg:hidden xl:inline">{name}</span>
+              <span className="calendar-weekday-short">{name.slice(0, 3)}</span>
+              <span className="calendar-weekday-full">{name}</span>
             </div>
           )
         })}
@@ -483,16 +484,13 @@ function CalendarMaster({ view, anchorKey, selectedKey, itemsByDate, clientsById
 
   return (
     <section className="min-w-0">
-      <header className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-accent">Studio schedule</p>
-        <div className="mt-3 flex min-w-0 flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl lg:text-4xl">Calendar</h1>
-            <p className="mt-2 text-sm leading-6 text-muted">Appointments and booking milestones in Rome time.</p>
-          </div>
-          <button type="button" onClick={onCreate} className="min-h-11 shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-paper">Add appointment</button>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Studio schedule"
+        title="Calendar"
+        subtitle="Appointments and booking milestones in Rome time."
+        compactAtRail
+        action={<button type="button" onClick={onCreate} className="min-h-11 shrink-0 rounded-xl bg-accent px-4 text-sm font-bold text-paper">Add appointment</button>}
+      />
 
       <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
         <div className="grid grid-cols-3 rounded-xl border border-line bg-paper p-1" aria-label="Calendar view">
@@ -760,7 +758,7 @@ function ContractPanel({ appointment, contract, profile }: {
                 </button>
               ) : (
                 <div className="rounded-xl border border-warning-line bg-warning-surface p-3">
-                  <p className="text-sm leading-5 text-warning-text">This creates a second immutable contract with a new sequential number. The existing contract remains in the Contracts list.</p>
+                  <p className="text-sm leading-5 text-warning-text">This creates a second contract with its own number. It does not replace the first one, which stays exactly as it was issued and still stands.</p>
                   <div className="mt-3"><LanguageChoice value={language} onChange={setLanguage} disabled={busy} /></div>
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <button type="button" onClick={() => setShowAnother(false)} disabled={busy} className="min-h-11 rounded-xl border border-line bg-paper px-3 text-sm font-bold text-muted">Cancel</button>
@@ -963,11 +961,12 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
 
   return (
     <div className="min-w-0">
-      <header className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-accent">{initial ? 'Edit appointment' : 'New appointment'}</p>
-        <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl lg:text-4xl">{initial ? clientName(selectedClient) : 'Booking details'}</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">Times are shown in Rome time. Milestones are snapshotted when the booking is created.</p>
-      </header>
+      <PageHeader
+        eyebrow={initial ? 'Edit appointment' : 'New appointment'}
+        title={initial ? clientName(selectedClient) : 'Booking details'}
+        subtitle="Times are Rome time. Reminder and cancellation dates are fixed when you create the booking, so later price or policy changes never move an existing booking."
+        compactAtRail
+      />
 
       <form className="space-y-6" noValidate onSubmit={handleSubmit}>
         <FormSection title="Booking" description="Choose the reusable client and catalogue service for this appointment.">
@@ -1016,7 +1015,7 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
           </div>
         </FormSection>
 
-        <FormSection title="Date and place" description="Stored in UTC and displayed in Europe/Rome with an explicit timezone.">
+        <FormSection title="Date and place" description="Times are Rome time.">
           <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="appointment-startLocal" required>Starts</FieldLabel>
@@ -1059,7 +1058,7 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
           </div>
         </FormSection>
 
-        <FormSection title="Fees" description="Amounts stay in integer cents. The total is the sum of these line items.">
+        <FormSection title="Fees" description="The total adds up the lines below.">
           {errors.lineItems ? <ErrorText className="mb-4">{errors.lineItems}</ErrorText> : null}
           <div className="space-y-4">
             {draft.lineItems.map((item, index) => {
@@ -1195,8 +1194,8 @@ export function Calendar() {
 
   if ((route.kind === 'detail' || route.kind === 'edit') && !selectedAppointment) {
     return (
-      <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
-        <h1 className="font-display text-3xl text-ink">Appointment not found</h1>
+      <div className="rounded-3xl border border-dashed border-line px-6 py-8 text-left md:py-12">
+        <PageHeader eyebrow="Calendar" title="Appointment not found" spacing="none" />
         <button type="button" onClick={() => navigate('/calendar')} className="mt-4 min-h-11 rounded-xl border border-accent px-4 text-sm font-bold text-accent">Back to calendar</button>
       </div>
     )

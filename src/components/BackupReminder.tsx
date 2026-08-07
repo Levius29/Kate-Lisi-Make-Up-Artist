@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { formatFullDate } from '../lib/dates'
 import { storage } from '../storage'
 import { META_KEYS } from '../storage/metaKeys'
 import { useLive } from '../storage/useLive'
@@ -13,7 +14,7 @@ function validTimestamp(value: unknown): number | undefined {
   return Number.isFinite(time) ? time : undefined
 }
 
-export function BackupReminder() {
+export function BackupReminder({ variant = 'banner' }: { variant?: 'banner' | 'rail' }) {
   const reminderState = useLive(async () => {
     const [lastBackupAt, dismissedAt] = await Promise.all([
       storage.meta.get(META_KEYS.lastBackupAt),
@@ -34,18 +35,20 @@ export function BackupReminder() {
   }
 
   return (
-    <aside className="mb-7 min-w-0 rounded-2xl border border-warning-line bg-warning-surface p-4 text-warning-text sm:flex sm:items-center sm:gap-4">
+    <aside className={variant === 'rail'
+      ? 'min-w-0 border-t border-line px-4 pt-5 text-muted'
+      : 'mb-5 min-w-0 rounded-2xl border border-warning-line bg-warning-surface p-4 text-warning-text sm:flex sm:items-center sm:gap-4 md:mb-7'}>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold">Your data needs a backup</p>
-        <p className="mt-1 text-sm leading-6">
+        <p className={`text-sm font-bold ${variant === 'rail' ? 'text-ink' : ''}`}>Your data needs a backup</p>
+        <p className={`mt-1 text-sm ${variant === 'rail' ? 'leading-5' : 'leading-6'}`}>
           Lose the phone with no backup, lose everything. Create one encrypted file now.
         </p>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0">
+      <div className={variant === 'rail' ? 'mt-3 grid grid-cols-2 gap-2' : 'mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:shrink-0'}>
         <button
           type="button"
           onClick={() => void dismiss()}
-          className="min-h-11 rounded-xl border border-warning-line px-3 text-sm font-bold"
+          className={`min-h-11 rounded-xl border px-3 text-sm font-bold ${variant === 'rail' ? 'border-line' : 'border-warning-line'}`}
         >
           Later
         </button>
@@ -57,5 +60,25 @@ export function BackupReminder() {
         </Link>
       </div>
     </aside>
+  )
+}
+
+export function BackupStatusLine() {
+  // Wrapped in an object so a pending read is distinguishable from a key that was never
+  // written — both are a bare undefined. Announcing "no backup yet" while the read is still
+  // in flight would be a false alarm about the only copy of her records.
+  const state = useLive(async () => ({
+    lastBackupAt: await storage.meta.get(META_KEYS.lastBackupAt),
+  }))
+
+  if (state === undefined) return null
+
+  const timestamp = validTimestamp(state.lastBackupAt)
+  return (
+    <p className="mt-2 text-sm leading-6 text-muted">
+      {timestamp === undefined
+        ? 'No backup created yet.'
+        : `Last backup: ${formatFullDate(new Date(timestamp).toISOString())}.`}
+    </p>
   )
 }

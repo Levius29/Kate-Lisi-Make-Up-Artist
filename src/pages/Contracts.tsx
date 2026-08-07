@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { PageHeader } from '../components/ui/PageHeader'
 import { presentContractPdf } from '../contract/presentPdf'
 import { formatFullDate } from '../lib/dates'
 import { storage } from '../storage'
@@ -47,16 +48,15 @@ export function Contracts() {
 
   return (
     <div className="mx-auto min-w-0 w-full max-w-3xl">
-      <header className="mb-8 border-b border-line pb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">Settings</p>
-        <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">Issued contracts</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-          Immutable records, newest first. Open any contract to share or save its PDF again.
-        </p>
-        <Link to="/settings" className="mt-5 inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold text-muted">
+      <PageHeader
+        eyebrow="Settings"
+        title="Issued contracts"
+        subtitle="Completed contracts, newest first. Open any one to share or save its PDF again."
+        bordered
+        action={<Link to="/settings" className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold text-muted">
           Back to Settings
-        </Link>
-      </header>
+        </Link>}
+      />
 
       <div className="min-h-6" aria-live="polite">
         {message ? <p className="break-words text-sm font-semibold leading-6 text-muted">{message}</p> : null}

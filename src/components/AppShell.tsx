@@ -1,16 +1,31 @@
 import { useEffect } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { BackupReminder } from './BackupReminder'
+import { NavigationIcon, type NavigationIconName } from './NavigationIcon'
 import { ServiceWorkerUpdatePrompt } from './ServiceWorkerUpdatePrompt'
 
 const destinations = [
-  { label: 'Today', to: '/', end: true },
-  { label: 'Calendar', to: '/calendar' },
-  { label: 'Clients', to: '/clients' },
-  { label: 'Money', to: '/money' },
-  { label: 'Settings', to: '/settings' },
+  { label: 'Today', to: '/', icon: 'today' },
+  { label: 'Calendar', to: '/calendar', icon: 'calendar' },
+  { label: 'Clients', to: '/clients', icon: 'clients' },
+  { label: 'Money', to: '/money', icon: 'money' },
+  { label: 'Settings', to: '/settings', icon: 'settings' },
 ] as const
+
+function isDestinationActive(pathname: string, to: string): boolean {
+  if (to === '/') return pathname === '/'
+  if (to === '/settings') {
+    // These tools live under Settings in the information architecture even
+    // though their readable routes are top-level.
+    return pathname === '/settings'
+      || pathname.startsWith('/settings/')
+      || pathname.startsWith('/backup')
+      || pathname.startsWith('/timeline')
+      || pathname.startsWith('/services')
+  }
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
 
 /*
  * Two navigations, one visible at a time (SPEC.md §10.4):
@@ -57,6 +72,8 @@ export function AppShell({
   onDismissUpdate = () => undefined,
 }: AppShellProps) {
   useKeyboardAwareFocus()
+  const { pathname } = useLocation()
+  const showBackupReminder = pathname === '/'
 
   return (
     <div className="app-shell grid grid-rows-[minmax(0,1fr)_auto_auto] overflow-hidden bg-canvas text-ink lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto]">
@@ -69,28 +86,33 @@ export function AppShell({
           Studio
         </p>
         <div className="mt-10 flex flex-col gap-1">
-          {destinations.map(({ label, to, ...linkProps }) => (
-            <NavLink
-              key={to}
-              to={to}
-              {...linkProps}
-              className={({ isActive }) =>
-                `flex min-h-12 items-center rounded-2xl px-4 text-base transition-colors ${
-                  isActive
-                    ? 'bg-canvas font-semibold text-accent'
-                    : 'text-muted hover:text-ink'
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          {destinations.map(({ label, to, icon }) => {
+            const active = isDestinationActive(pathname, to)
+            return (
+              <Link
+                key={to}
+                to={to}
+                aria-current={active ? 'page' : undefined}
+                className={`relative flex min-h-12 items-center gap-3 rounded-2xl px-4 text-base transition-colors ${
+                  active ? 'bg-canvas font-semibold text-accent' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <NavigationIcon name={icon as NavigationIconName} className="h-5 w-5 shrink-0" />
+                {label}
+              </Link>
+            )
+          })}
         </div>
+        {showBackupReminder ? (
+          <div className="mt-auto pb-[env(safe-area-inset-bottom)]">
+            <BackupReminder variant="rail" />
+          </div>
+        ) : null}
       </nav>
 
       <div className="app-scroll row-start-1 min-w-0 lg:col-start-2" data-app-scroll>
         <main className="mx-auto w-full max-w-3xl pb-8 pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
-          <BackupReminder />
+          {showBackupReminder ? <div className="lg:hidden"><BackupReminder /></div> : null}
           <Outlet />
         </main>
       </div>
@@ -108,20 +130,24 @@ export function AppShell({
         className="z-40 row-start-3 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] lg:hidden"
       >
         <div className="mx-auto grid max-w-3xl grid-cols-5">
-          {destinations.map(({ label, to, ...linkProps }) => (
-            <NavLink
-              key={to}
-              to={to}
-              {...linkProps}
-              className={({ isActive }) =>
-                `flex min-h-16 items-center justify-center px-1 text-[0.72rem] font-semibold tracking-wide transition-colors ${
-                  isActive ? 'text-accent' : 'text-muted'
-                }`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          {destinations.map(({ label, to, icon }) => {
+            const active = isDestinationActive(pathname, to)
+            return (
+              <Link
+                key={to}
+                to={to}
+                aria-current={active ? 'page' : undefined}
+                className={`group relative flex min-h-16 min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[0.64rem] font-semibold leading-none tracking-[0.02em] transition-colors ${active ? 'text-accent' : 'text-muted'}`}
+              >
+                <NavigationIcon name={icon as NavigationIconName} className="h-5 w-5 shrink-0" />
+                <span className="whitespace-nowrap">{label}</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-1.5 hidden h-0.5 w-5 rounded-full bg-accent group-aria-[current=page]:block"
+                />
+              </Link>
+            )
+          })}
         </div>
       </nav>
     </div>

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { InvoicePanel } from '../components/invoices/InvoicePanel'
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
+import { PageHeader } from '../components/ui/PageHeader'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextInput } from '../components/ui/TextInput'
 import { romeDateKey, romeDateKeyToUtc } from '../lib/appointmentSchedule'
@@ -299,7 +300,7 @@ function PaymentForm({ appointment }: { appointment: Appointment }) {
         <Field>
           <FieldLabel htmlFor="payment-amount">Amount</FieldLabel>
           <TextInput id="payment-amount" inputMode="decimal" value={amount} onChange={(event) => { setAmount(event.target.value); setError('') }} hasError={Boolean(error)} />
-          <HelperText>EUR, stored as exact cents.</HelperText>
+          <HelperText>Shown in euros.</HelperText>
         </Field>
         <Field>
           <FieldLabel htmlFor="payment-method">Method</FieldLabel>
@@ -445,13 +446,13 @@ export function Money() {
 
   return (
     <div className="min-w-0">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Studio</p>
-        <h1 className="mt-3 font-display text-5xl leading-none">Money</h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
-          A quiet view of what has arrived, what remains, and the annual threshold.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Studio"
+        title="Money"
+        subtitle="What has arrived, what remains, and the annual threshold."
+        tone="muted"
+        spacing="none"
+      />
 
       <RevenueMeter appointments={appointments} profile={data.profile} invoices={data.invoices} nowIso={nowIso} />
 

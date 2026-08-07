@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { PageHeader } from '../components/ui/PageHeader'
 import {
   formatClientLocalTime,
   formatFullDate,
@@ -441,14 +442,14 @@ export function Today() {
 
   return (
     <div className="min-w-0">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Studio</p>
-        <h1 className="mt-3 font-display text-5xl leading-none">Today</h1>
-        <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
-          A calm view of the next booking and the messages that need your attention.
-        </p>
-        <p
-          className={`mt-4 max-w-xl rounded-xl border px-4 py-3 text-sm font-semibold leading-6 ${
+      <PageHeader
+        eyebrow="Studio"
+        title="Today"
+        subtitle="The next booking and messages that need your attention."
+        tone="muted"
+        spacing="none"
+        footer={<p
+          className={`mt-3 max-w-xl rounded-xl border px-4 py-3 text-sm font-semibold leading-5 md:mt-4 md:leading-6 ${
             data.persistenceGranted
               ? 'border-line bg-paper/70 text-success-text'
               : 'border-warning-line bg-warning-surface text-warning-text'
@@ -458,10 +459,10 @@ export function Today() {
           {data.persistenceGranted
             ? 'Extra protection for your saved work is on.'
             : 'Extra protection for your saved work is not on yet. Keep Studio on your Home Screen; it will try again next time.'}
-        </p>
-      </header>
+        </p>}
+      />
 
-      <div className="mt-10">
+      <div className="mt-6 md:mt-10">
         <NextAppointment
           appointment={nextAppointment}
           client={nextAppointment ? clientsById.get(nextAppointment.clientId) : undefined}
