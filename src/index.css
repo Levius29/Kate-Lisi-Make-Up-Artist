@@ -38,6 +38,7 @@
 }
 
 :root {
+  color-scheme: light;
   font-family: var(--font-sans);
   color: var(--color-ink);
   background: var(--color-canvas);

@@ -16,6 +16,7 @@ import {
 import { formatEUR } from '../lib/money'
 import { outstandingAppointments, type OutstandingAppointment } from '../lib/payments'
 import { storage } from '../storage'
+import { META_KEYS } from '../storage/metaKeys'
 import { useLive } from '../storage/useLive'
 import type { Appointment, AppointmentRecall, Client, Service } from '../types'
 
@@ -23,6 +24,7 @@ interface TodayData {
   appointments: Appointment[]
   clients: Client[]
   services: Service[]
+  persistenceGranted: boolean
 }
 
 interface RecallListItem {
@@ -329,12 +331,13 @@ export function Today() {
   const [undoRecall, setUndoRecall] = useState<UndoRecall>()
   const [actionError, setActionError] = useState('')
   const data = useLive<TodayData>(async () => {
-    const [appointments, clients, services] = await Promise.all([
+    const [appointments, clients, services, persistenceGranted] = await Promise.all([
       storage.appointments.list({ orderBy: 'startAt' }),
       storage.clients.list({ includeDeleted: true }),
       storage.services.list({ includeDeleted: true }),
+      storage.meta.get<boolean>(META_KEYS.persistenceGranted),
     ])
-    return { appointments, clients, services }
+    return { appointments, clients, services, persistenceGranted: persistenceGranted === true }
   }, [])
 
   useEffect(() => {
@@ -443,6 +446,18 @@ export function Today() {
         <h1 className="mt-3 font-display text-5xl leading-none">Today</h1>
         <p className="mt-4 max-w-xl text-sm leading-6 text-muted">
           A calm view of the next booking and the messages that need your attention.
+        </p>
+        <p
+          className={`mt-4 max-w-xl rounded-xl border px-4 py-3 text-sm font-semibold leading-6 ${
+            data.persistenceGranted
+              ? 'border-line bg-paper/70 text-success-text'
+              : 'border-warning-line bg-warning-surface text-warning-text'
+          }`}
+          aria-live="polite"
+        >
+          {data.persistenceGranted
+            ? 'Extra protection for your saved work is on.'
+            : 'Extra protection for your saved work is not on yet. Keep Studio on your Home Screen; it will try again next time.'}
         </p>
       </header>
 

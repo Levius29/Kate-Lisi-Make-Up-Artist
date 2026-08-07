@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { BackupReminder } from './BackupReminder'
+import { ServiceWorkerUpdatePrompt } from './ServiceWorkerUpdatePrompt'
 
 const destinations = [
   { label: 'Today', to: '/', end: true },
@@ -44,14 +45,24 @@ function useKeyboardAwareFocus() {
   }, [])
 }
 
-export function AppShell() {
+interface AppShellProps {
+  updateReady?: boolean
+  onReloadUpdate?: () => void
+  onDismissUpdate?: () => void
+}
+
+export function AppShell({
+  updateReady = false,
+  onReloadUpdate = () => undefined,
+  onDismissUpdate = () => undefined,
+}: AppShellProps) {
   useKeyboardAwareFocus()
 
   return (
-    <div className="app-shell grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-canvas text-ink lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-1">
+    <div className="app-shell grid grid-rows-[minmax(0,1fr)_auto_auto] overflow-hidden bg-canvas text-ink lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto]">
       <nav
         aria-label="Primary"
-        className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line lg:bg-paper lg:py-10 lg:pl-[calc(1.25rem+env(safe-area-inset-left))] lg:pr-5"
+        className="hidden lg:sticky lg:top-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line lg:bg-paper lg:py-10 lg:pl-[calc(1.25rem+env(safe-area-inset-left))] lg:pr-5"
       >
         <p className="px-4 font-display text-2xl leading-tight">Kate Lisi</p>
         <p className="mt-1 px-4 text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-muted">
@@ -77,16 +88,24 @@ export function AppShell() {
         </div>
       </nav>
 
-      <div className="app-scroll min-w-0" data-app-scroll>
+      <div className="app-scroll row-start-1 min-w-0 lg:col-start-2" data-app-scroll>
         <main className="mx-auto w-full max-w-3xl pb-8 pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
           <BackupReminder />
           <Outlet />
         </main>
       </div>
 
+      {/* Its own grid row keeps the update notice above navigation instead of covering it. */}
+      {updateReady ? (
+        <ServiceWorkerUpdatePrompt
+          onReload={onReloadUpdate}
+          onDismiss={onDismissUpdate}
+        />
+      ) : null}
+
       <nav
         aria-label="Primary"
-        className="z-40 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] lg:hidden"
+        className="z-40 row-start-3 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] lg:hidden"
       >
         <div className="mx-auto grid max-w-3xl grid-cols-5">
           {destinations.map(({ label, to, ...linkProps }) => (

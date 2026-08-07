@@ -26,26 +26,43 @@ function isStandalone(): boolean {
   )
 }
 
-async function requestPersistentStorageOnce(): Promise<void> {
-  const requestedAt = await storage.meta.get<string>(META_KEYS.persistenceRequestedAt)
-  if (requestedAt !== undefined) return
-
+export async function requestPersistentStorage(): Promise<void> {
+  const browserStorage = navigator.storage
   let granted = false
+
   try {
     granted =
-      typeof navigator.storage?.persist === 'function'
-        ? await navigator.storage.persist()
+      typeof browserStorage?.persisted === 'function'
+        ? await browserStorage.persisted()
         : false
   } catch {
     granted = false
   }
 
+  let requested = false
+  if (!granted && typeof browserStorage?.persist === 'function') {
+    requested = true
+    try {
+      granted = await browserStorage.persist()
+    } catch {
+      granted = false
+    }
+  }
+
+  const observedAt = new Date().toISOString()
   await storage.transaction(async (transactionStorage) => {
     await transactionStorage.meta.set(META_KEYS.persistenceGranted, granted)
-    await transactionStorage.meta.set(
-      META_KEYS.persistenceRequestedAt,
-      new Date().toISOString(),
-    )
+    if (requested) {
+      // A refusal before installation must not suppress the next app-start request.
+      // The browser call is cheap and idempotent, so this records "last asked", not "asked once".
+      await transactionStorage.meta.set(META_KEYS.persistenceRequestedAt, observedAt)
+    }
+    if (
+      granted &&
+      (await transactionStorage.meta.get(META_KEYS.persistenceGrantedAt)) === undefined
+    ) {
+      await transactionStorage.meta.set(META_KEYS.persistenceGrantedAt, observedAt)
+    }
   })
 }
 
@@ -60,7 +77,7 @@ export function IosInstallGate({ children }: IosInstallGateProps) {
   )
 
   useEffect(() => {
-    persistenceRequest ??= requestPersistentStorageOnce()
+    persistenceRequest ??= requestPersistentStorage()
     void persistenceRequest
   }, [])
 
