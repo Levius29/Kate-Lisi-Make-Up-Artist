@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { BackupReminder } from './BackupReminder'
@@ -111,9 +111,17 @@ export function AppShell({
       </nav>
 
       <div className="app-scroll row-start-1 min-w-0 lg:col-start-2" data-app-scroll>
-        <main className="mx-auto w-full max-w-3xl pb-8 pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
+        <main className="mx-auto min-h-full w-full max-w-3xl pb-8 pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
           {showBackupReminder ? <div className="lg:hidden"><BackupReminder /></div> : null}
-          <Outlet />
+          <Suspense
+            fallback={
+              // Route chunks are precached, so choose a quiet canvas-coloured pane for the
+              // brief disk read; the shell keeps its height and its single visible navigation.
+              <div aria-hidden="true" className="min-h-full w-full bg-canvas" />
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 

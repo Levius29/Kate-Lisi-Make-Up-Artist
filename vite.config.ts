@@ -12,6 +12,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
+        // Pins the app's identity across deploys. Must resolve to the same URL as start_url or
+        // an already-installed copy is treated as a different app. Written absolute because a
+        // relative id resolves against the *origin*, and on GitHub Pages the origin is shared
+        // with every other project the account publishes.
+        id: '/Kate-Lisi-Make-Up-Artist/',
         name: 'Kate Lisi — Studio',
         short_name: 'Studio',
         description: 'Offline studio management for Kate Lisi.',

@@ -1,17 +1,31 @@
+import { lazy } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { AppShell } from './components/AppShell'
 import { AppErrorBoundary } from './components/AppErrorBoundary'
 import { IosInstallGate } from './components/IosInstallGate'
-import { Calendar } from './pages/Calendar'
-import { Backup } from './pages/Backup'
-import { Clients } from './pages/Clients'
-import { Contracts } from './pages/Contracts'
-import { Money } from './pages/Money'
-import { Services } from './pages/Services'
-import { Settings } from './pages/Settings'
 import { Today } from './pages/Today'
-import { Timeline } from './pages/Timeline'
+
+const Backup = lazy(() => import('./pages/Backup').then(({ Backup }) => ({ default: Backup })))
+const Calendar = lazy(() =>
+  import('./pages/Calendar').then(({ Calendar }) => ({ default: Calendar })),
+)
+const Clients = lazy(() =>
+  import('./pages/Clients').then(({ Clients }) => ({ default: Clients })),
+)
+const Contracts = lazy(() =>
+  import('./pages/Contracts').then(({ Contracts }) => ({ default: Contracts })),
+)
+const Money = lazy(() => import('./pages/Money').then(({ Money }) => ({ default: Money })))
+const Services = lazy(() =>
+  import('./pages/Services').then(({ Services }) => ({ default: Services })),
+)
+const Settings = lazy(() =>
+  import('./pages/Settings').then(({ Settings }) => ({ default: Settings })),
+)
+const Timeline = lazy(() =>
+  import('./pages/Timeline').then(({ Timeline }) => ({ default: Timeline })),
+)
 
 interface AppProps {
   updateReady?: boolean

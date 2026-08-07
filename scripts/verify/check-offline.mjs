@@ -2,6 +2,13 @@
 // Loads once so the service worker precaches AND takes control, then kills the
 // network and does a full document reload — not a hash change, which would pass
 // trivially without touching the network at all.
+//
+// KNOWN LIMIT — read before trusting a green run. Chromium serves subresources from its own
+// HTTP cache when the network is cut, and workbox populates that cache as a side effect of
+// fetching each asset to precache it. So this file passes even with every Cache API entry
+// deleted and the worker unregistered; that was measured, not assumed. It proves the app
+// *behaves* offline here, not that the precache is the reason. iOS Safari has no such safety
+// net. `check-precache.mjs` is the check that actually proves it — run both.
 import { chromium } from 'playwright';
 
 const BASE = process.env.APP_URL || 'http://127.0.0.1:4173/Kate-Lisi-Make-Up-Artist/';
@@ -71,13 +78,84 @@ try {
 try {
   const page2 = await ctx.newPage();
   await page2.goto(BASE + '#/settings', { waitUntil: 'load', timeout: 20000 });
-  await page2.waitForSelector('main', { timeout: 10000 });
+  // Wait for the page's own heading, not merely for <main> to exist: routes are lazy now, so
+  // the Suspense fallback satisfies a bare `main` selector instantly and this assertion would
+  // pass without a single route chunk ever resolving.
+  await page2.waitForFunction(
+    () => {
+      const h1 = document.querySelector('main h1');
+      return !!h1 && h1.textContent.trim().length > 0;
+    },
+    { timeout: 10000 },
+  );
   const main = (await page2.textContent('main')).trim();
   console.log(`cold deep link offline:    PASS — main="${main.slice(0, 40)}"`);
   await page2.close();
 } catch (e) {
   ok = false;
   console.log('cold deep link offline:    FAIL —', String(e).split('\n')[0]);
+}
+
+/*
+ * 3. Every route she has never opened, reached by tapping while offline.
+ *    Routes are React.lazy() chunks, so a tap on Calendar in a villa with no signal is a
+ *    network request unless workbox precached that chunk. This walks the whole navigation
+ *    from a session that only ever saw Today — the real sequence: open the app at home,
+ *    drive out, tap something new.
+ */
+/*
+ * Each route is paired with the heading it must actually render. Asserting merely that some
+ * <h1> appeared is not enough: when a lazy chunk fails to load, AppErrorBoundary catches the
+ * rejection and renders its own <main><h1>This screen stopped working</h1>, which satisfies a
+ * naive check. A wiped-precache mutation run proved that exact false pass.
+ */
+const NAVIGATION = [
+  ['#/calendar', 'Calendar'],
+  ['#/clients', 'Clients'],
+  ['#/money', 'Money'],
+  ['#/settings', 'Business profile'],
+  ['#/services', 'Services catalogue'],
+  ['#/backup', 'Backup & restore'],
+  ['#/timeline', 'Bridal timeline'],
+  ['#/settings/contracts', 'Issued contracts'],
+  ['#/calendar/new', 'Booking details'],
+  // Note: /clients/new carries two <h1>s — the list's and the editor's. Pre-existing, and the
+  // reason this matches any heading on the page rather than the first.
+  ['#/clients/new', 'Client details'],
+];
+const BOUNDARY_HEADING = 'This screen stopped working';
+try {
+  const fresh = await ctx.newPage();
+  await fresh.goto(BASE, { waitUntil: 'load', timeout: 20000 });
+  await fresh.waitForSelector('h1', { timeout: 10000 });
+
+  const unreachable = [];
+  for (const [route, expected] of NAVIGATION) {
+    try {
+      await fresh.evaluate((hash) => { window.location.hash = hash.slice(1); }, route);
+      await fresh.waitForFunction(
+        (want) => [...document.querySelectorAll('main h1')]
+          .some((h1) => h1.textContent.trim().startsWith(want)),
+        expected,
+        { timeout: 8000 },
+      );
+    } catch {
+      const shown = await fresh.evaluate(
+        () => [...document.querySelectorAll('main h1')].map((h1) => h1.textContent.trim()).join(' / ') || '(nothing)',
+      );
+      unreachable.push(`${route} → ${shown === BOUNDARY_HEADING ? 'ERROR BOUNDARY' : shown}`);
+    }
+  }
+  if (unreachable.length) {
+    ok = false;
+    console.log(`offline route walk:        FAIL — never rendered: ${unreachable.join(', ')}`);
+  } else {
+    console.log(`offline route walk:        PASS — all ${NAVIGATION.length} unvisited routes opened`);
+  }
+  await fresh.close();
+} catch (e) {
+  ok = false;
+  console.log('offline route walk:        FAIL —', String(e).split('\n')[0]);
 }
 
 if (errors.length) {

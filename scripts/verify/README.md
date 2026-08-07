@@ -29,7 +29,8 @@ export CHROME=/path/to/chromium        # optional; defaults to the CI/sandbox pa
 |---|---|
 | `check-viewports.mjs` | The SPEC.md §10 matrix: 10 iPhone/iPad viewports and orientations. No horizontal page scroll, 44×44 tap targets, 16px form fields, exactly one visible `<nav>`, no console errors, and no primary surface hidden inside its own scroller. Writes screenshots to `SHOT_DIR`. |
 | `check-scroll.mjs` | The bottom bar never covers content that cannot be scrolled into view. Reported from a real iPhone; the bar used to be `position: fixed` over a full-height pane. |
-| `check-offline.mjs` | The app loads with the network cut — a full document reload **and** a cold deep link in a fresh tab. She works in villas with dead Wi-Fi (SPEC.md §1.3). |
+| `check-offline.mjs` | The app loads with the network cut — a full document reload, a cold deep link in a fresh tab, and a walk through all ten routes she has never opened. She works in villas with dead Wi-Fi (SPEC.md §1.3). **Read the limit noted at the top of the file**: Chromium's own HTTP cache makes this pass even with the precache wiped, so it shows behaviour, not cause. |
+| `check-precache.mjs` | Every built asset is in the service worker's precache manifest. This is the check that actually proves a route she has never visited will open offline on an iPhone; the browser-level one cannot. No browser needed. |
 | `audit-dom.mjs` | Duplicate element ids, an undeclared `color-scheme`, developer jargon leaking into user-facing text, which routes render the backup reminder, and whether every one of the first 20 real tab stops shows a visible focus ring. |
 | `../check-contrast.mjs` | Every colour pair actually used meets its contrast target. Text ≥5.5:1, borders ≥3:1, cards distinguishable from the page. |
 

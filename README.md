@@ -54,6 +54,13 @@ serve from the `gh-pages` branch. The site is then served at
 - **Install it to the Home Screen on iOS.** Safari deletes the data of an uninstalled web app
   after seven days. The app blocks with instructions until this is acknowledged.
 - **Set a backup passphrase and export once.** Lose the phone with no backup, lose everything.
+- **Ask the lawyer about deletion as well as the contract.** "Delete" in this app archives: the
+  record keeps its personal data and only stops appearing in lists (`deletedAt`, see
+  `src/storage/DexieStorageAdapter.ts`). That is deliberate — an archived client is still
+  attached to contracts and invoices that are immutable by design and that Italian bookkeeping
+  requires you to keep. But GDPR art. 17 gives a client a right to erasure, and there is
+  currently no way in the app to honour one. Until there is, a request has to be handled by
+  hand, and how long records may be kept is a question for the lawyer, not for this file.
 
 ## Notes for whoever works on this next
 
