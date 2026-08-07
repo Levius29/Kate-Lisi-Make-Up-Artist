@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Kate Lisi">
+  <rect width="512" height="512" fill="#2E2A27"/>
+  <g fill="#EFE3D8">
+    <text x="259" y="352" text-anchor="middle"
+          font-family="Georgia, 'Times New Roman', serif" font-size="210" letter-spacing="6">KL</text>
+    <rect x="190" y="394" width="132" height="2" opacity="0.55"/>
+  </g>
+</svg>
