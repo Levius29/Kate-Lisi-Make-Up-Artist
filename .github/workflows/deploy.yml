@@ -26,7 +26,9 @@ jobs:
 
       - run: npm ci
 
-      - run: npx tsc --noEmit
+      # tsc -b, not --noEmit: the root tsconfig is solution-style (files: [] plus
+      # project references), so --noEmit exits 0 without checking a single file.
+      - run: npx tsc -b
 
       - run: npm test --if-present
 
