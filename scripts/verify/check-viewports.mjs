@@ -54,7 +54,24 @@ for (const vp of VIEWPORTS) {
 
   for (const route of ROUTES) {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(250);
+    /*
+     * Wait for the route's own content, not a fixed delay. Routes are React.lazy chunks and a
+     * cold load of a deep link starts that fetch only after networkidle, so a 250ms sleep
+     * measured the Suspense fallback instead of the page: an empty pane has no horizontal
+     * overflow, no undersized field and no small tap target, so the whole matrix reported
+     * 110/110 green over blank screenshots. Found by looking at the images, not the exit code.
+     *
+     * In real use this wait is nothing — an in-app tap with the worker warm reaches content in
+     * 1-4ms. It is only the cold deep load that is slow enough to catch the checker out.
+     */
+    await page.waitForFunction(
+      () => {
+        const main = document.querySelector('main');
+        return !!main && main.innerText.trim().length > 0;
+      },
+      { timeout: 15000 },
+    );
+    await page.waitForTimeout(150);
 
     const metrics = await page.evaluate(() => {
       const de = document.documentElement;
