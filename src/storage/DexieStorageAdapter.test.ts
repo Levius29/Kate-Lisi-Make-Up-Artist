@@ -113,4 +113,58 @@ describe('DexieStorageAdapter', () => {
       { id: 'stamp-q2-2030', label: 'Q2 2030', dueOn: '2030-09-30' },
     ])
   })
+
+  it('round-trips every nested field of a service through IndexedDB', async () => {
+    const service = await adapter.services.create({
+      name: 'Bridal make-up',
+      description: 'Wedding-day make-up at the client venue.',
+      durationMinutes: 120,
+      basePrice: 45_000,
+      perPersonPrice: 9_000,
+      travelFeePerKm: 125,
+      travelFeeFlat: 3_500,
+      defaultDepositPercent: 30,
+      cancellationTiers: [
+        { daysBefore: 91, retainPercent: 0 },
+        { daysBefore: 30, retainPercent: 50 },
+        { daysBefore: 0, retainPercent: 100 },
+      ],
+      recallTemplates: [
+        {
+          daysBefore: 14,
+          channel: 'whatsapp',
+          messageTemplate: 'Hello {firstName}, your {serviceName} is on {dateLong}.',
+        },
+        {
+          daysBefore: 3,
+          channel: 'email',
+          messageTemplate: 'Balance due: {balanceDue}. Location: {location}.',
+        },
+      ],
+      requiresTrial: true,
+      contractTemplateId: 'standard-bridal',
+      active: true,
+    })
+
+    db.close()
+    await db.open()
+    const reloaded = await new DexieStorageAdapter().services.get(service.id)
+
+    expect(reloaded).toEqual(service)
+    expect(reloaded?.cancellationTiers).toHaveLength(3)
+    expect(reloaded?.recallTemplates).toHaveLength(2)
+    expect(reloaded).toMatchObject({
+      name: 'Bridal make-up',
+      description: 'Wedding-day make-up at the client venue.',
+      durationMinutes: 120,
+      basePrice: 45_000,
+      perPersonPrice: 9_000,
+      travelFeePerKm: 125,
+      travelFeeFlat: 3_500,
+      defaultDepositPercent: 30,
+      requiresTrial: true,
+      contractTemplateId: 'standard-bridal',
+      active: true,
+    })
+  })
 })

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 import {
   ErrorText,
@@ -275,6 +276,23 @@ export function Settings() {
           Required field
         </p>
       </header>
+
+      <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-display text-2xl leading-tight text-ink">Services catalogue</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+              Manage prices, cancellation tiers and recall message templates.
+            </p>
+          </div>
+          <Link
+            to="/services"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-accent px-4 text-sm font-semibold text-accent sm:w-auto"
+          >
+            Open services
+          </Link>
+        </div>
+      </section>
 
       <form className="space-y-6 md:space-y-8" noValidate onSubmit={handleSubmit}>
         <FormSection
