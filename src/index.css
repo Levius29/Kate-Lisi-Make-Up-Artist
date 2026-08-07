@@ -3,12 +3,38 @@
 @theme {
   --font-display: ui-serif, Georgia, "Times New Roman", serif;
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-canvas: #f5f1ec;
-  --color-paper: #fbf9f6;
+  --color-canvas: #e6ddd5;
+  --color-paper: #faf7f2;
   --color-ink: #302a29;
-  --color-muted: #746b68;
-  --color-accent: #765f5a;
-  --color-line: #d8cec8;
+  --color-muted: #5c5350;
+  --color-accent: #6a4d47;
+  --color-line: #887771;
+  --color-accent-soft: #efe3dd;
+  --color-warning-surface: #f3e8cf;
+  --color-warning-text: #59451f;
+  --color-warning-line: #856321;
+  --color-danger-surface: #f3e2de;
+  --color-danger-text: #6b302a;
+  --color-danger-line: #9d5348;
+  --color-success-text: #385b43;
+  --color-status-enquiry-surface: #efe3dd;
+  --color-status-enquiry-text: #59433d;
+  --color-status-enquiry-line: #8a645a;
+  --color-status-quoted-surface: #f1eadb;
+  --color-status-quoted-text: #5f4e2f;
+  --color-status-quoted-line: #897044;
+  --color-status-confirmed-surface: #e1ebe5;
+  --color-status-confirmed-text: #365245;
+  --color-status-confirmed-line: #5f7a69;
+  --color-status-paid-surface: #e1e9ef;
+  --color-status-paid-text: #344b5e;
+  --color-status-paid-line: #61798b;
+  --color-status-completed-surface: #eae4ee;
+  --color-status-completed-text: #4f405b;
+  --color-status-completed-line: #776482;
+  --color-status-cancelled-surface: #ebe9e7;
+  --color-status-cancelled-text: #514c49;
+  --color-status-cancelled-line: #7b7470;
 }
 
 :root {
@@ -40,9 +66,17 @@ body {
   overscroll-behavior-y: contain;
 }
 
+/*
+ * The shell owns the viewport and gives the bottom navigation its own grid row.
+ * The scroll row therefore shrinks above the navigation instead of sitting behind it.
+ */
+.app-shell {
+  height: 100dvh;
+}
+
 /* Keep installed-app momentum scrolling inside the content pane, not on body. */
 .app-scroll {
-  height: 100dvh;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;

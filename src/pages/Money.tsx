@@ -81,9 +81,9 @@ function RevenueMeter({
   const progress = Math.min(100, Math.max(0, state.percentage))
   const year = romeDateKey(nowIso).slice(0, 4)
   const tone = state.band === 'warning'
-    ? 'border-amber-700/25 bg-amber-50/55'
+    ? 'border-warning-line bg-warning-surface'
     : state.band === 'over'
-      ? 'border-accent/40 bg-paper'
+      ? 'border-accent bg-paper'
       : 'border-line bg-paper'
 
   return (
@@ -108,9 +108,9 @@ function RevenueMeter({
         aria-valuemax={profile.annualRevenueTarget}
         aria-valuenow={Math.min(state.revenue, profile.annualRevenueTarget)}
       >
-        <span className="absolute inset-y-0 right-0 w-1/5 bg-amber-100" aria-hidden="true" />
+        <span className="absolute inset-y-0 right-0 w-1/5 bg-warning-surface" aria-hidden="true" />
         <span
-          className={`absolute inset-y-0 left-0 rounded-full ${state.band === 'warning' ? 'bg-amber-700/70' : 'bg-accent'}`}
+          className={`absolute inset-y-0 left-0 rounded-full ${state.band === 'warning' ? 'bg-warning-line' : 'bg-accent'}`}
           style={{ width: `${progress}%` }}
           aria-hidden="true"
         />
@@ -173,7 +173,7 @@ function BookingRow({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`w-full min-w-0 rounded-2xl border p-4 text-left transition-colors ${selected ? 'border-accent bg-paper' : item.overdue ? 'border-red-900/25 bg-red-50/55' : 'border-line bg-paper/65'}`}
+      className={`w-full min-w-0 rounded-2xl border p-4 text-left transition-colors ${selected ? 'border-accent bg-paper' : item.overdue ? 'border-danger-line bg-danger-surface' : 'border-line bg-paper/65'}`}
     >
       <span className="flex min-w-0 items-start justify-between gap-3">
         <span className="min-w-0">

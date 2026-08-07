@@ -615,7 +615,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
                       />
                       {errors[messageKey] ? <ErrorText id={`${messageId}-error`}>{errors[messageKey]}</ErrorText> : null}
                       {unknownFields.length > 0 ? (
-                        <p id={`${messageId}-warning`} className="text-sm font-medium leading-5 text-amber-900" role="status">
+                        <p id={`${messageId}-warning`} className="text-sm font-medium leading-5 text-warning-text" role="status">
                           Unknown {unknownFields.length === 1 ? 'field' : 'fields'}: {unknownFields.map((name) => `{${name}}`).join(', ')}. It will remain unchanged in the client message.
                         </p>
                       ) : null}
@@ -670,7 +670,7 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
 
         <div className="border-t border-line pb-2 pt-6 sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div className="min-h-11" aria-live="polite">
-            {saveError ? <p className="text-sm font-semibold leading-6 text-red-800">{saveError}</p> : null}
+            {saveError ? <p className="text-sm font-semibold leading-6 text-danger-text">{saveError}</p> : null}
           </div>
           <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:flex">
             <button
@@ -749,7 +749,7 @@ function ServiceDetail({
           </div>
         </div>
         {statusError ? (
-          <p className="mt-3 text-sm font-semibold text-red-800" role="status">
+          <p className="mt-3 text-sm font-semibold text-danger-text" role="status">
             {statusError}
           </p>
         ) : null}
@@ -837,7 +837,7 @@ function ServiceList({ services, onSeed }: { services: Service[] | undefined; on
       <Link
         key={service.id}
         to={`/services/${service.id}`}
-        className="flex min-h-20 min-w-0 items-center justify-between gap-3 rounded-2xl border border-line bg-paper px-4 py-3 transition-colors hover:border-accent/60"
+        className="flex min-h-20 min-w-0 items-center justify-between gap-3 rounded-2xl border border-line bg-paper px-4 py-3 transition-colors hover:border-accent"
       >
         <span className="min-w-0">
           <span className="block break-words text-base font-semibold text-ink">{service.name}</span>
@@ -871,7 +871,7 @@ function ServiceList({ services, onSeed }: { services: Service[] | undefined; on
           <button type="button" className="mt-5 min-h-12 w-full rounded-xl border border-accent px-5 text-base font-semibold text-accent disabled:cursor-wait disabled:opacity-60 sm:w-auto" onClick={() => void seed()} disabled={isSeeding}>
             {isSeeding ? 'Adding starter services…' : 'Add starter services'}
           </button>
-          {seedError ? <p className="mt-3 text-sm font-semibold text-red-800" role="status">{seedError}</p> : null}
+          {seedError ? <p className="mt-3 text-sm font-semibold text-danger-text" role="status">{seedError}</p> : null}
         </section>
       ) : (
         <div className="space-y-8">
@@ -888,7 +888,7 @@ function ServiceList({ services, onSeed }: { services: Service[] | undefined; on
               <p className="text-sm text-muted">{inactive.length}</p>
             </div>
             <p className="mb-3 text-sm leading-6 text-muted">Kept for existing records, hidden from future selection.</p>
-            <div className="space-y-2 opacity-80">{inactive.length > 0 ? cards(inactive) : <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-sm text-muted">No inactive services.</p>}</div>
+            <div className="space-y-2">{inactive.length > 0 ? cards(inactive) : <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-sm text-muted">No inactive services.</p>}</div>
           </section>
         </div>
       )}

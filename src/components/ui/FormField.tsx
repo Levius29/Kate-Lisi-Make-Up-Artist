@@ -36,7 +36,7 @@ export function HelperText({ className = '', ...props }: ComponentProps<'p'>) {
 export function ErrorText({ className = '', ...props }: ComponentProps<'p'>) {
   return (
     <p
-      className={`text-sm font-medium leading-5 text-red-800 ${className}`}
+      className={`text-sm font-medium leading-5 text-danger-text ${className}`}
       role="status"
       {...props}
     />

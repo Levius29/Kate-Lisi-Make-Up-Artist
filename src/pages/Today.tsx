@@ -124,7 +124,7 @@ function UnpaidBalances({
       {shown.length ? (
         <div className="mt-4 space-y-3">
           {shown.map(({ appointment, summary, dueAt, overdue }) => (
-            <Link key={appointment.id} to={`/money/${appointment.id}`} className={`flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-2xl border p-4 ${overdue ? 'border-red-900/25 bg-red-50/55' : 'border-line bg-paper/70'}`}>
+            <Link key={appointment.id} to={`/money/${appointment.id}`} className={`flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-2xl border p-4 ${overdue ? 'border-danger-line bg-danger-surface' : 'border-line bg-paper/70'}`}>
               <span className="min-w-0">
                 <span className="block break-words font-display text-lg leading-tight text-ink">{fullClientName(clientsById.get(appointment.clientId))}</span>
                 <span className="mt-1 block break-words text-xs leading-5 text-muted">{servicesById.get(appointment.serviceId)?.name ?? 'Service unavailable'} · {overdue ? 'Overdue since' : 'Due'} {formatFullDate(dueAt)}</span>
@@ -205,7 +205,7 @@ function RecallRow({
             {client?.timezone ?? 'No client timezone'}
           </p>
           {outsideCourtesyHours ? (
-            <p className="mt-2 inline-flex min-h-7 items-center rounded-full border border-amber-700/30 bg-amber-50 px-2.5 text-xs font-bold text-amber-950">
+            <p className="mt-2 inline-flex min-h-7 items-center rounded-full border border-warning-line bg-warning-surface px-2.5 text-xs font-bold text-warning-text">
               Outside 09:00–20:00 — send only if appropriate
             </p>
           ) : null}
@@ -229,7 +229,7 @@ function RecallRow({
       </div>
 
       {awaitingConfirmation ? (
-        <div className="mt-4 rounded-xl border border-accent/35 bg-canvas p-3" aria-live="polite">
+        <div className="mt-4 rounded-xl border border-accent bg-canvas p-3" aria-live="polite">
           <p className="text-sm font-semibold leading-6 text-ink">
             Did you send this {channelLabel(recall)} message?
           </p>
@@ -482,7 +482,7 @@ export function Today() {
 
         <div className="min-h-6" aria-live="polite">
           {actionError ? (
-            <p className="mt-4 rounded-xl border border-red-800/30 bg-red-50 p-3 text-sm font-semibold leading-6 text-red-900">
+            <p className="mt-4 rounded-xl border border-danger-line bg-danger-surface p-3 text-sm font-semibold leading-6 text-danger-text">
               {actionError}
             </p>
           ) : null}
@@ -551,7 +551,7 @@ export function Today() {
             <button
               type="button"
               onClick={() => setUndoRecall(undefined)}
-              className="h-11 w-11 shrink-0 rounded-xl border border-paper/30 text-xl"
+              className="h-11 w-11 shrink-0 rounded-xl border border-paper text-xl"
               aria-label="Dismiss sent confirmation"
             >
               ×

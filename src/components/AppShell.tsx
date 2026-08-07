@@ -48,7 +48,7 @@ export function AppShell() {
   useKeyboardAwareFocus()
 
   return (
-    <div className="h-dvh overflow-hidden bg-canvas text-ink lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <div className="app-shell grid grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-canvas text-ink lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-1">
       <nav
         aria-label="Primary"
         className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line lg:bg-paper lg:py-10 lg:pl-[calc(1.25rem+env(safe-area-inset-left))] lg:pr-5"
@@ -78,7 +78,7 @@ export function AppShell() {
       </nav>
 
       <div className="app-scroll min-w-0" data-app-scroll>
-        <main className="mx-auto w-full max-w-3xl pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
+        <main className="mx-auto w-full max-w-3xl pb-8 pl-[calc(1.5rem+env(safe-area-inset-left))] pr-[calc(1.5rem+env(safe-area-inset-right))] pt-[calc(2rem+env(safe-area-inset-top))] lg:max-w-4xl lg:pb-16 lg:pt-12">
           <BackupReminder />
           <Outlet />
         </main>
@@ -86,7 +86,7 @@ export function AppShell() {
 
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur lg:hidden"
+        className="z-40 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] lg:hidden"
       >
         <div className="mx-auto grid max-w-3xl grid-cols-5">
           {destinations.map(({ label, to, ...linkProps }) => (

@@ -168,7 +168,7 @@ export function InvoicePanel({
 
       <div className="min-h-7" aria-live="polite">
         {error ? <ErrorText className="mt-3">{error}</ErrorText> : null}
-        {message ? <p className="mt-3 text-sm font-semibold leading-6 text-green-800">{message}</p> : null}
+        {message ? <p className="mt-3 text-sm font-semibold leading-6 text-success-text">{message}</p> : null}
       </div>
 
       <section className="mt-6 border-t border-line pt-5" aria-labelledby="stamp-tracker-heading">

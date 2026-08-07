@@ -261,7 +261,7 @@ export function Settings() {
           <p
             className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
               isDirty
-                ? 'border-amber-700/30 bg-amber-50 text-amber-900'
+                ? 'border-warning-line bg-warning-surface text-warning-text'
                 : 'border-line bg-paper text-muted'
             }`}
             role="status"
@@ -721,8 +721,8 @@ export function Settings() {
               <p
                 className={`text-sm font-semibold leading-6 ${
                   saveMessage.startsWith('Business profile saved')
-                    ? 'text-green-800'
-                    : 'text-red-800'
+                    ? 'text-success-text'
+                    : 'text-danger-text'
                 }`}
               >
                 {saveMessage}

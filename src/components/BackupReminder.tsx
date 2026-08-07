@@ -34,7 +34,7 @@ export function BackupReminder() {
   }
 
   return (
-    <aside className="mb-7 min-w-0 rounded-2xl border border-amber-800/35 bg-amber-50 p-4 text-amber-950 sm:flex sm:items-center sm:gap-4">
+    <aside className="mb-7 min-w-0 rounded-2xl border border-warning-line bg-warning-surface p-4 text-warning-text sm:flex sm:items-center sm:gap-4">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold">Your data needs a backup</p>
         <p className="mt-1 text-sm leading-6">
@@ -45,13 +45,13 @@ export function BackupReminder() {
         <button
           type="button"
           onClick={() => void dismiss()}
-          className="min-h-11 rounded-xl border border-amber-900/30 px-3 text-sm font-bold"
+          className="min-h-11 rounded-xl border border-warning-line px-3 text-sm font-bold"
         >
           Later
         </button>
         <Link
           to="/backup"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-amber-950 px-4 text-sm font-bold text-amber-50"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-warning-text px-4 text-sm font-bold text-paper"
         >
           Back up now
         </Link>
@@ -59,4 +59,3 @@ export function BackupReminder() {
     </aside>
   )
 }
-

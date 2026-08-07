@@ -99,10 +99,10 @@ function FormSection({ title, description, children, safety = false }: FormSecti
   return (
     <section
       className={`min-w-0 rounded-3xl border px-4 py-6 sm:px-6 md:px-8 md:py-8 ${
-        safety ? 'border-amber-800/35 bg-amber-50/70' : 'border-line bg-paper/70'
+        safety ? 'border-warning-line bg-warning-surface' : 'border-line bg-paper/70'
       }`}
     >
-      <div className={`mb-6 border-b pb-5 ${safety ? 'border-amber-800/20' : 'border-line'}`}>
+      <div className={`mb-6 border-b pb-5 ${safety ? 'border-warning-line' : 'border-line'}`}>
         <h2 className="font-display text-2xl leading-tight text-ink">{title}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{description}</p>
       </div>
@@ -287,7 +287,7 @@ function ClientEditor({ initialClient, onCancel, onSaved }: ClientEditorProps) {
           </Field>
 
           <div className="mt-5 space-y-4">
-            <label className="rounded-2xl border border-amber-800/25 bg-paper/70 px-4 py-2.5 text-sm font-semibold text-ink">
+            <label className="rounded-2xl border border-warning-line bg-paper/70 px-4 py-2.5 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
                 checked={draft.patchTestDone}
@@ -496,7 +496,7 @@ function ClientEditor({ initialClient, onCancel, onSaved }: ClientEditorProps) {
                   key={option.value}
                   className={`min-w-0 rounded-2xl border px-4 py-3 transition-colors ${
                     draft.imageReleaseLevel === option.value
-                      ? 'border-accent bg-accent/8'
+                      ? 'border-accent bg-accent/10'
                       : 'border-line bg-canvas/45'
                   }`}
                 >
@@ -558,7 +558,7 @@ function ClientEditor({ initialClient, onCancel, onSaved }: ClientEditorProps) {
 
         <div className="border-t border-line pb-2 pt-6 sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div className="min-h-11" aria-live="polite">
-            {saveError ? <p className="text-sm font-semibold leading-6 text-red-800">{saveError}</p> : null}
+            {saveError ? <p className="text-sm font-semibold leading-6 text-danger-text">{saveError}</p> : null}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:flex">
             <button
@@ -646,8 +646,8 @@ function ClientDetail({ client, instant, onArchive, onRestore }: ClientDetailPro
         </div>
       </header>
 
-      <section className="mt-6 rounded-3xl border border-amber-800/35 bg-amber-50/75 p-5 md:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900">Safety</p>
+      <section className="mt-6 rounded-3xl border border-warning-line bg-warning-surface p-5 md:p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning-text">Safety</p>
         <h2 className="mt-2 font-display text-2xl text-ink">Allergies and sensitivities</h2>
         <p className="mt-3 whitespace-pre-wrap break-words text-base font-semibold leading-7 text-ink">
           {client.allergies || 'No allergies recorded.'}
@@ -770,8 +770,8 @@ function ClientMaster({
               aria-current={selectedId === client.id ? 'page' : undefined}
               className={`flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition-colors ${
                 selectedId === client.id
-                  ? 'border-accent bg-accent/8'
-                  : 'border-line bg-paper hover:border-accent/60'
+                  ? 'border-accent bg-accent/10'
+                  : 'border-line bg-paper hover:border-accent'
               }`}
             >
               <span className="min-w-0">

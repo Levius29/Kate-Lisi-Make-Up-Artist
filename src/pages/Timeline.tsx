@@ -184,7 +184,7 @@ export function Timeline() {
       </header>
 
       {linkedAppointmentMissingCeremony ? (
-        <p className="mb-6 rounded-2xl border border-amber-800/30 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-950">
+        <p className="mb-6 rounded-2xl border border-warning-line bg-warning-surface p-4 text-sm font-semibold leading-6 text-warning-text">
           This appointment has no ceremony time. Add one in the appointment, or use the calculator as a standalone plan below.
         </p>
       ) : null}
@@ -223,20 +223,20 @@ export function Timeline() {
             <HelperText>How long the journey takes. She leaves this many minutes before she arrives.</HelperText>
           </Field>
         </div>
-        {error ? <ErrorText className="mt-5 rounded-xl border border-red-800/25 bg-red-50 p-3">{error}</ErrorText> : null}
+        {error ? <ErrorText className="mt-5 rounded-xl border border-danger-line bg-danger-surface p-3">{error}</ErrorText> : null}
         <button type="submit" className="mt-6 min-h-12 w-full rounded-xl bg-accent px-5 text-base font-bold text-paper sm:w-auto">Calculate timeline</button>
       </form>
 
       {timeline ? (
-        <section className="mt-8 min-w-0 rounded-3xl border border-accent/35 bg-paper p-4 sm:p-6 md:p-8" aria-live="polite">
+        <section className="mt-8 min-w-0 rounded-3xl border border-accent bg-paper p-4 sm:p-6 md:p-8" aria-live="polite">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Calculated schedule</p>
           <h2 className="mt-2 break-words font-display text-3xl leading-tight">{draft.coupleName.trim()}</h2>
           <p className="mt-2 text-sm font-semibold text-muted">{formatFullDate(timeline.ceremonyAt)}</p>
 
           <div className="mt-5 rounded-2xl bg-accent px-4 py-5 text-paper sm:px-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/75">Arrives at the venue</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper">Arrives at the venue</p>
             <p className="mt-1 font-display text-3xl leading-tight">{formatTimeWithZone(timeline.arrivalAt)}</p>
-            <p className="mt-2 text-sm text-paper/80">
+            <p className="mt-2 text-sm text-paper">
               Leave by {formatTimeWithZone(timeline.departAt)} — {timeline.travelMinutes} minutes travel
             </p>
           </div>
@@ -263,7 +263,7 @@ export function Timeline() {
               </thead>
               <tbody>
                 {timeline.slots.map((slot) => (
-                  <tr key={slot.label} className={`border-t border-line ${slot.isBride ? 'bg-[#efe6e0] font-bold text-accent' : ''}`}>
+                  <tr key={slot.label} className={`border-t border-line ${slot.isBride ? 'bg-accent-soft font-bold text-accent' : ''}`}>
                     <th className="px-4 py-3 font-semibold">{slot.label}</th>
                     <td className="px-4 py-3 whitespace-nowrap">{formatTimeWithZone(slot.startsAt)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{formatTimeWithZone(slot.endsAt)}</td>

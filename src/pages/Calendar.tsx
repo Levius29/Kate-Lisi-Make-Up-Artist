@@ -101,12 +101,13 @@ const STATUS_OPTIONS: ReadonlyArray<{ value: AppointmentStatus; label: string }>
 ]
 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
-  enquiry: 'border-[#ad8f85] bg-[#efe3dd] text-[#59433d]',
-  quoted: 'border-[#ad9871] bg-[#f1eadb] text-[#5f4e2f]',
-  confirmed: 'border-[#708c7c] bg-[#e1ebe5] text-[#365245]',
-  balance_paid: 'border-[#6f8396] bg-[#e1e9ef] text-[#344b5e]',
-  completed: 'border-[#867792] bg-[#eae4ee] text-[#4f405b]',
-  cancelled: 'border-[#a7a19d] bg-[#ebe9e7] text-[#746f6c] opacity-65 grayscale',
+  enquiry: 'border-status-enquiry-line bg-status-enquiry-surface text-status-enquiry-text',
+  quoted: 'border-status-quoted-line bg-status-quoted-surface text-status-quoted-text',
+  confirmed: 'border-status-confirmed-line bg-status-confirmed-surface text-status-confirmed-text',
+  balance_paid: 'border-status-paid-line bg-status-paid-surface text-status-paid-text',
+  completed: 'border-status-completed-line bg-status-completed-surface text-status-completed-text',
+  // Keep cancelled fully opaque: fading the whole chip also fades its text below readable contrast.
+  cancelled: 'border-status-cancelled-line bg-status-cancelled-surface text-status-cancelled-text',
 }
 
 function parseCalendarRoute(pathname: string): CalendarRoute {
@@ -201,7 +202,7 @@ function FormSection({ title, description, children }: { title: string; descript
 
 function HalalBadge() {
   return (
-    <div className="mt-3 rounded-xl border-2 border-amber-800 bg-amber-50 px-3 py-2 text-sm font-bold leading-5 text-amber-950">
+    <div className="mt-3 rounded-xl border-2 border-warning-line bg-warning-surface px-3 py-2 text-sm font-bold leading-5 text-warning-text">
       No pork derivatives / no alcohol-based products
     </div>
   )
@@ -210,7 +211,7 @@ function HalalBadge() {
 function LinkedTag({ appointment, children }: { appointment: Appointment; children: Appointment[] }) {
   if (!appointment.parentAppointmentId && children.length === 0) return null
   return (
-    <span className="inline-flex min-h-7 items-center rounded-full border border-accent/50 bg-paper px-2.5 text-xs font-bold uppercase tracking-[0.1em] text-accent">
+    <span className="inline-flex min-h-7 items-center rounded-full border border-accent bg-paper px-2.5 text-xs font-bold uppercase tracking-[0.1em] text-accent">
       ↔ Linked wedding set
     </span>
   )
@@ -234,7 +235,7 @@ function AppointmentCard({ appointment, client, service, children, onOpen }: App
       <span className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <span className="min-w-0">
           <span className="block text-sm font-bold">{formatTime(appointment.startAt)} · {clientName(client)}</span>
-          <span className="mt-1 block text-sm leading-5 opacity-80">{service?.name ?? 'Service unavailable'} · {appointment.locationName}</span>
+          <span className="mt-1 block text-sm leading-5">{service?.name ?? 'Service unavailable'} · {appointment.locationName}</span>
         </span>
         <span className="shrink-0 text-xs font-bold uppercase tracking-wide">{statusLabel(appointment.status)}</span>
       </span>
@@ -256,7 +257,7 @@ function MilestoneCard({ item, client, service, onOpen }: {
     <button
       type="button"
       onClick={onOpen}
-      className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-dashed border-accent/60 bg-paper/70 px-4 py-3 text-left"
+      className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-2xl border border-dashed border-accent bg-paper/70 px-4 py-3 text-left"
     >
       <span className="h-4 w-4 shrink-0 rotate-45 border-2 border-accent bg-canvas" aria-hidden="true" />
       <span className="min-w-0">
@@ -367,7 +368,7 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
                 onClick={() => onSelectDay(key)}
                 aria-label={longDateForKey(key)}
                 aria-pressed={selectedKey === key}
-                className={`flex h-11 w-full items-center justify-center rounded-xl text-sm font-bold sm:w-11 sm:rounded-full ${selectedKey === key ? 'bg-accent text-paper' : outsideMonth ? 'text-muted/65' : 'text-ink'}`}
+                className={`flex h-11 w-full items-center justify-center rounded-xl text-sm font-bold sm:w-11 sm:rounded-full ${selectedKey === key ? 'bg-accent text-paper' : outsideMonth ? 'text-muted' : 'text-ink'}`}
               >
                 {day.getDate()}
               </button>
@@ -394,7 +395,7 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
                       key={`${item.milestoneKind}-${appointment.id}-${index}`}
                       type="button"
                       onClick={() => onOpen(appointment)}
-                      className="flex min-h-11 w-full min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-accent/60 bg-canvas px-1.5 py-1 text-left text-[0.62rem] font-bold leading-tight text-accent"
+                      className="flex min-h-11 w-full min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-accent bg-canvas px-1.5 py-1 text-left text-[0.62rem] font-bold leading-tight text-accent"
                     >
                       <span className="h-2.5 w-2.5 shrink-0 rotate-45 border border-accent" aria-hidden="true" />
                       <span className="line-clamp-3">{item.label}</span>
@@ -444,7 +445,7 @@ function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppoi
                     {(item.appointment.parentAppointmentId || childAppointments.get(item.appointment.id)?.length) ? <span className="block">↔ Linked</span> : null}
                   </button>
                 ) : (
-                  <button key={`${item.milestoneKind}-${item.appointment.id}-${index}`} type="button" onClick={() => onOpen(item.appointment)} className="min-h-11 w-full rounded-lg border border-dashed border-accent/60 p-1.5 text-left text-[0.62rem] font-bold leading-tight text-accent">
+                  <button key={`${item.milestoneKind}-${item.appointment.id}-${index}`} type="button" onClick={() => onOpen(item.appointment)} className="min-h-11 w-full rounded-lg border border-dashed border-accent p-1.5 text-left text-[0.62rem] font-bold leading-tight text-accent">
                     ◆ {item.label}
                   </button>
                 ))}
@@ -682,7 +683,7 @@ function ContractPanel({ appointment, contract, profile }: {
   const busy = issueState !== 'idle' || pdfBusy
 
   return (
-    <section className="mt-5 min-w-0 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
+    <section className="mt-5 min-w-0 rounded-2xl border border-accent bg-canvas p-4 sm:p-5">
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Contract</p>
         {contract ? (
@@ -758,8 +759,8 @@ function ContractPanel({ appointment, contract, profile }: {
                   Issue another contract for this appointment
                 </button>
               ) : (
-                <div className="rounded-xl border border-amber-700/30 bg-amber-50 p-3">
-                  <p className="text-sm leading-5 text-amber-950">This creates a second immutable contract with a new sequential number. The existing contract remains in the Contracts list.</p>
+                <div className="rounded-xl border border-warning-line bg-warning-surface p-3">
+                  <p className="text-sm leading-5 text-warning-text">This creates a second immutable contract with a new sequential number. The existing contract remains in the Contracts list.</p>
                   <div className="mt-3"><LanguageChoice value={language} onChange={setLanguage} disabled={busy} /></div>
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <button type="button" onClick={() => setShowAnother(false)} disabled={busy} className="min-h-11 rounded-xl border border-line bg-paper px-3 text-sm font-bold text-muted">Cancel</button>
@@ -831,7 +832,7 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
       </dl>
 
       {appointment.ceremonyTime ? (
-        <section className="mt-5 rounded-2xl border border-accent/35 bg-canvas p-4">
+        <section className="mt-5 rounded-2xl border border-accent bg-canvas p-4">
           <h3 className="font-display text-xl text-ink">Bridal timeline</h3>
           <p className="mt-1 text-sm leading-6 text-muted">Ceremony time and head count are ready in the backwards calculator.</p>
           <Link to={`/timeline?appointment=${encodeURIComponent(appointment.id)}`} className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-accent px-4 text-sm font-bold text-accent sm:w-auto">
@@ -843,7 +844,7 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
       <ContractPanel appointment={appointment} contract={contract} profile={profile} />
 
       {(parent || children.length > 0) ? (
-        <section className="mt-5 rounded-2xl border border-accent/35 bg-canvas p-4">
+        <section className="mt-5 rounded-2xl border border-accent bg-canvas p-4">
           <h3 className="text-sm font-bold text-ink">Linked wedding set</h3>
           <div className="mt-2 space-y-2">
             {parent ? <button type="button" onClick={() => onOpenLinked(parent)} className="min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-left text-sm font-bold text-accent">Wedding · {formatFullDate(parent.startAt)} →</button> : null}
@@ -1116,7 +1117,7 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
         </FormSection>
 
         <div className="border-t border-line pb-2 pt-6 sm:flex sm:items-center sm:justify-between sm:gap-4">
-          <div className="min-h-11" aria-live="polite">{saveError ? <p className="text-sm font-bold leading-6 text-red-800">{saveError}</p> : null}</div>
+          <div className="min-h-11" aria-live="polite">{saveError ? <p className="text-sm font-bold leading-6 text-danger-text">{saveError}</p> : null}</div>
           <div className="grid grid-cols-2 gap-3 sm:flex">
             <button type="button" onClick={onCancel} className="min-h-12 rounded-xl border border-line px-5 text-base font-bold text-muted">Cancel</button>
             <button type="submit" disabled={isSaving} className="min-h-12 rounded-xl bg-accent px-6 text-base font-bold text-paper disabled:opacity-60">{isSaving ? 'Saving…' : initial ? 'Save changes' : 'Create appointment'}</button>

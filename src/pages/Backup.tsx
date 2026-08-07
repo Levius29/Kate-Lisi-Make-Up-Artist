@@ -192,7 +192,7 @@ export function Backup() {
         </p>
       </header>
 
-      <section className="rounded-3xl border border-accent/35 bg-paper p-4 sm:p-6 md:p-8">
+      <section className="rounded-3xl border border-accent bg-paper p-4 sm:p-6 md:p-8">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Export all</p>
         <h2 className="mt-2 font-display text-3xl leading-tight">Create one encrypted backup</h2>
         <p className="mt-3 text-sm leading-6 text-muted">
@@ -226,7 +226,7 @@ export function Backup() {
             />
           </Field>
           {exportError ? <ErrorText>{exportError}</ErrorText> : null}
-          {exportMessage ? <p className="text-sm font-semibold leading-6 text-green-800" role="status">{exportMessage}</p> : null}
+          {exportMessage ? <p className="text-sm font-semibold leading-6 text-success-text" role="status">{exportMessage}</p> : null}
           <button type="submit" disabled={exportBusy} className="min-h-12 w-full rounded-xl bg-accent px-5 text-base font-bold text-paper disabled:opacity-60 sm:w-auto">
             {exportBusy ? 'Encrypting all data…' : 'Export All'}
           </button>
@@ -258,23 +258,23 @@ export function Backup() {
             />
           </Field>
           {restoreError ? <ErrorText>{restoreError}</ErrorText> : null}
-          {restoreMessage ? <p className="text-sm font-semibold leading-6 text-green-800" role="status">{restoreMessage}</p> : null}
+          {restoreMessage ? <p className="text-sm font-semibold leading-6 text-success-text" role="status">{restoreMessage}</p> : null}
           <button type="submit" disabled={restoreBusy} className="min-h-12 w-full rounded-xl border border-accent px-5 text-base font-bold text-accent disabled:opacity-60 sm:w-auto">
             {restoreBusy ? 'Reading backup…' : 'Preview restore'}
           </button>
         </form>
 
         {preview ? (
-          <div className="mt-7 rounded-2xl border-2 border-amber-800/35 bg-amber-50 p-4 sm:p-5">
-            <h3 className="font-display text-2xl text-amber-950">Review before replacing</h3>
-            <p className="mt-2 break-words text-sm leading-6 text-amber-950">
+          <div className="mt-7 rounded-2xl border-2 border-warning-line bg-warning-surface p-4 sm:p-5">
+            <h3 className="font-display text-2xl text-warning-text">Review before replacing</h3>
+            <p className="mt-2 break-words text-sm leading-6 text-warning-text">
               <strong>{preview.fileName}</strong><br />
               Created {formatFullDateTimeWithZone(preview.envelope.exportedAt)} · {preview.envelope.recordCount} total records
             </p>
             <div className="mt-4 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
               <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b border-amber-900/25">
+                  <tr className="border-b border-warning-line">
                     <th className="px-2 py-3 font-bold">Record type</th>
                     <th className="px-2 py-3 text-right font-bold">In backup</th>
                     <th className="px-2 py-3 text-right font-bold">On this device now</th>
@@ -282,7 +282,7 @@ export function Backup() {
                 </thead>
                 <tbody>
                   {PREVIEW_ROWS.map(({ key, label }) => (
-                    <tr key={key} className="border-b border-amber-900/15 last:border-0">
+                    <tr key={key} className="border-b border-warning-line last:border-0">
                       <th className="px-2 py-3 font-semibold">{label}</th>
                       <td className="px-2 py-3 text-right tabular-nums">{preview.incoming[key].length}</td>
                       <td className="px-2 py-3 text-right tabular-nums">{preview.current[key].length}</td>
@@ -291,11 +291,11 @@ export function Backup() {
                 </tbody>
               </table>
             </div>
-            <label className="mt-5 rounded-xl border border-amber-900/25 bg-paper/60 p-3 text-sm font-semibold leading-6">
+            <label className="mt-5 rounded-xl border border-warning-line bg-paper/60 p-3 text-sm font-semibold leading-6">
               <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
               I understand that every current record will be replaced by the backup.
             </label>
-            <button type="button" onClick={() => void restore()} disabled={!confirmed || restoreBusy} className="mt-4 min-h-12 w-full rounded-xl bg-amber-950 px-5 text-base font-bold text-amber-50 disabled:opacity-45 sm:w-auto">
+            <button type="button" onClick={() => void restore()} disabled={!confirmed || restoreBusy} className="mt-4 min-h-12 w-full rounded-xl bg-warning-text px-5 text-base font-bold text-paper disabled:opacity-45 sm:w-auto">
               {restoreBusy ? 'Restoring…' : 'Replace all data and restore'}
             </button>
           </div>
