@@ -17,6 +17,12 @@ export interface StampDutyDeadline {
 export interface BusinessProfile {
   businessName: string
   registeredAddress: string
+  /**
+   * Contact address for data-protection matters. Not listed in SPEC.md §3.1, but
+   * the GDPR block the contract must carry (§4.5 point 8) has to name a way for
+   * the client to exercise the rights under Articles 15 to 22.
+   */
+  email: string
   vatNumber: string
   taxCode: string
   regime: 'forfettario' | 'ordinario'
@@ -36,6 +42,16 @@ export interface BusinessProfile {
   stampDutyDeadlines: StampDutyDeadline[]
   updatedAt: ISODateTime
 }
+
+/** English is the default; Italian is for the occasional Italian client. */
+export type ContractLocale = 'en' | 'it'
+
+/** Reproduced in the contract as four checked options, never a blanket yes. */
+export type ImageReleaseLevel =
+  | 'none'
+  | 'private_portfolio'
+  | 'social_media'
+  | 'face_obscured'
 
 export interface ProductPreferences {
   halal: boolean
@@ -58,7 +74,7 @@ export interface Client extends EntityMetadata {
   patchTestDone: boolean
   patchTestDate?: ISODateTime
   productPreferences: ProductPreferences
-  imageReleaseLevel: 'none' | 'private_portfolio' | 'social_media' | 'face_obscured'
+  imageReleaseLevel: ImageReleaseLevel
   gdprConsentAt: ISODateTime
   notes: string
 }
@@ -88,6 +104,14 @@ export interface Service extends EntityMetadata {
   cancellationTiers: CancellationTier[]
   recallTemplates: RecallTemplate[]
   requiresTrial: boolean
+  /**
+   * Whether this service needs a patch test before it is performed. Not listed in
+   * SPEC.md §3.3, but §4.5 point 7 requires the contract to state that a patch
+   * test was performed "where the service requires it", and requiresTrial is a
+   * different question — a trial is a styling rehearsal, a patch test is a safety
+   * check. Conflating them would put a false declaration in a signed contract.
+   */
+  requiresPatchTest: boolean
   contractTemplateId: string
   active: boolean
 }
@@ -154,7 +178,17 @@ export interface Appointment extends EntityMetadata {
   internalNotes: string
 }
 
+/**
+ * Everything the contract needs from the appointment, frozen at the moment of
+ * issue. The date, venue and head count are here rather than read live because
+ * SPEC.md §4.5 point 2 puts the place of performance in the signed document:
+ * moving the appointment afterwards must not rewrite a contract already signed.
+ */
 export interface ContractFinancialSnapshot {
+  startAt: ISODateTime
+  locationName: string
+  locationAddress: string
+  peopleCount: number
   lineItems: AppointmentLineItem[]
   subtotal: MoneyCents
   total: MoneyCents
@@ -171,7 +205,7 @@ export interface Contract extends EntityMetadata {
   businessSnapshot: BusinessProfile
   serviceSnapshot: Service
   financialSnapshot: ContractFinancialSnapshot
-  language: 'en' | 'it'
+  language: ContractLocale
   templateVersion: string
   generatedAt: ISODateTime
   signedAt?: ISODateTime
