@@ -132,6 +132,28 @@ class ContractRepository extends DexieRepository<Contract> {
   }
 }
 
+function immutableInvoiceSnapshot(invoice: Invoice): string {
+  const {
+    id: _id,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    deletedAt: _deletedAt,
+    paidAt: _paidAt,
+    ...snapshot
+  } = invoice
+  return JSON.stringify(snapshot)
+}
+
+class InvoiceRepository extends DexieRepository<Invoice> {
+  override async put(entity: Invoice): Promise<Invoice> {
+    const existing = await this.get(entity.id)
+    if (existing && immutableInvoiceSnapshot(existing) !== immutableInvoiceSnapshot(entity)) {
+      throw new Error('Issued invoice snapshots are immutable.')
+    }
+    return super.put(entity)
+  }
+}
+
 class DexieProfileRepository implements ProfileRepository {
   async get(): Promise<BusinessProfile | undefined> {
     const stored = await db.profile.get(PROFILE_ID)
@@ -160,7 +182,7 @@ class DexieMetaRepository implements MetaRepository {
 
 class DexieAppointmentPaymentRepository implements AppointmentPaymentRepository {
   add(appointmentId: string, payment: AppointmentPayment): Promise<Appointment> {
-    return db.transaction('rw', db.appointments, async () => {
+    return db.transaction('rw', [db.appointments, db.invoices], async () => {
       const appointment = await db.appointments.get(appointmentId)
       if (!appointment) throw new Error(`Appointment not found: ${appointmentId}`)
       if (!Number.isSafeInteger(payment.amount) || payment.amount <= 0) {
@@ -173,12 +195,13 @@ class DexieAppointmentPaymentRepository implements AppointmentPaymentRepository 
         updatedAt: now(),
       }
       await db.appointments.put(updated)
+      await this.syncInvoicePaidAt(appointmentId, updated.payments)
       return updated
     })
   }
 
   remove(appointmentId: string, paymentIndex: number): Promise<Appointment> {
-    return db.transaction('rw', db.appointments, async () => {
+    return db.transaction('rw', [db.appointments, db.invoices], async () => {
       const appointment = await db.appointments.get(appointmentId)
       if (!appointment) throw new Error(`Appointment not found: ${appointmentId}`)
       if (
@@ -192,7 +215,26 @@ class DexieAppointmentPaymentRepository implements AppointmentPaymentRepository 
       const payments = appointment.payments.filter((_, index) => index !== paymentIndex)
       const updated = { ...appointment, payments, updatedAt: now() }
       await db.appointments.put(updated)
+      await this.syncInvoicePaidAt(appointmentId, payments)
       return updated
+    })
+  }
+
+  private async syncInvoicePaidAt(
+    appointmentId: string,
+    payments: readonly AppointmentPayment[],
+  ): Promise<void> {
+    const invoice = await db.invoices.where('appointmentId').equals(appointmentId).first()
+    if (!invoice) return
+
+    const paidAt = [...payments]
+      .sort((left, right) => left.paidAt.localeCompare(right.paidAt))[0]
+      ?.paidAt
+    const { paidAt: _paidAt, ...withoutPaidAt } = invoice
+    await db.invoices.put({
+      ...withoutPaidAt,
+      ...(paidAt === undefined ? {} : { paidAt }),
+      updatedAt: now(),
     })
   }
 }
@@ -207,7 +249,7 @@ export class DexieStorageAdapter implements StorageAdapter {
   readonly appointmentPayments: AppointmentPaymentRepository =
     new DexieAppointmentPaymentRepository()
   readonly contracts: Repository<Contract> = new ContractRepository(db.contracts)
-  readonly invoices: Repository<Invoice> = new DexieRepository<Invoice>(db.invoices)
+  readonly invoices: Repository<Invoice> = new InvoiceRepository(db.invoices)
   readonly meta: MetaRepository = new DexieMetaRepository()
 
   transaction<T>(fn: (storage: StorageAdapter) => Promise<T>): Promise<T> {

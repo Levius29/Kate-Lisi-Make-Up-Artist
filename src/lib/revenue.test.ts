@@ -4,8 +4,11 @@ import type { Appointment, AppointmentPayment } from '../types'
 import { percentOf } from './money'
 import { calculateCurrentYearRevenue, revenueMeterState } from './revenue'
 
-function revenueBooking(total: number, payments: AppointmentPayment[]) {
-  return { total, payments } satisfies Pick<Appointment, 'total' | 'payments'>
+function revenueBooking(total: number, payments: AppointmentPayment[], id?: string) {
+  return { ...(id ? { id } : {}), total, payments } satisfies Pick<
+    Appointment,
+    'total' | 'payments'
+  > & { id?: string }
 }
 
 describe('cash-basis annual revenue', () => {
@@ -74,6 +77,32 @@ describe('cash-basis annual revenue', () => {
 
     expect(calculateCurrentYearRevenue([booking], '2025-12-20T12:00:00.000Z')).toBe(30_200)
     expect(calculateCurrentYearRevenue([booking], '2026-08-07T12:00:00.000Z')).toBe(70_000)
+  })
+
+  it('counts exactly one EUR 2.00 when a booking has an invoice', () => {
+    const booking = revenueBooking(
+      7_748,
+      [
+        {
+          type: 'balance',
+          amount: 7_748,
+          method: 'bank_transfer',
+          paidAt: '2026-06-01T10:00:00.000Z',
+        },
+      ],
+      'appointment-invoiced',
+    )
+    const invoices = [
+      {
+        appointmentId: 'appointment-invoiced',
+        stampDuty: 200,
+        paidAt: '2026-06-01T10:00:00.000Z',
+      },
+    ]
+
+    expect(
+      calculateCurrentYearRevenue([booking], '2026-08-07T12:00:00.000Z', invoices),
+    ).toBe(7_948)
   })
 })
 

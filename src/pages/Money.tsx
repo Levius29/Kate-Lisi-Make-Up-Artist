@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { InvoicePanel } from '../components/invoices/InvoicePanel'
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextInput } from '../components/ui/TextInput'
@@ -21,6 +22,7 @@ import type {
   AppointmentPayment,
   BusinessProfile,
   Client,
+  Invoice,
   PaymentMethod,
   Service,
 } from '../types'
@@ -30,6 +32,7 @@ interface MoneyData {
   clients: Client[]
   services: Service[]
   profile: BusinessProfile | undefined
+  invoices: Invoice[]
 }
 
 const PAYMENT_METHODS: ReadonlyArray<{ value: PaymentMethod; label: string }> = [
@@ -49,13 +52,15 @@ function paymentMethodLabel(method: PaymentMethod): string {
 function RevenueMeter({
   appointments,
   profile,
+  invoices,
   nowIso,
 }: {
   appointments: Appointment[]
   profile: BusinessProfile | undefined
+  invoices: Invoice[]
   nowIso: string
 }) {
-  const revenue = calculateCurrentYearRevenue(appointments, nowIso)
+  const revenue = calculateCurrentYearRevenue(appointments, nowIso, invoices)
 
   if (!profile) {
     return (
@@ -408,13 +413,14 @@ export function Money() {
   const navigate = useNavigate()
   const [nowIso, setNowIso] = useState(() => new Date().toISOString())
   const data = useLive<MoneyData>(async () => {
-    const [appointments, clients, services, profile] = await Promise.all([
+    const [appointments, clients, services, profile, invoices] = await Promise.all([
       storage.appointments.list({ includeDeleted: true }),
       storage.clients.list({ includeDeleted: true }),
       storage.services.list({ includeDeleted: true }),
       storage.profile.get(),
+      storage.invoices.list(),
     ])
-    return { appointments, clients, services, profile }
+    return { appointments, clients, services, profile, invoices }
   }, [])
 
   useEffect(() => {
@@ -447,7 +453,14 @@ export function Money() {
         </p>
       </header>
 
-      <RevenueMeter appointments={appointments} profile={data.profile} nowIso={nowIso} />
+      <RevenueMeter appointments={appointments} profile={data.profile} invoices={data.invoices} nowIso={nowIso} />
+
+      <InvoicePanel
+        appointments={visibleAppointments}
+        clientsById={clientsById}
+        invoices={data.invoices}
+        profile={data.profile}
+      />
 
       <div className="mt-10 min-w-0 lg:grid lg:grid-cols-[minmax(20rem,0.95fr)_minmax(20rem,1.05fr)] lg:items-start lg:gap-6">
         <div className="min-w-0 space-y-10">

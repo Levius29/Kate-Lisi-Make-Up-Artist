@@ -1,8 +1,10 @@
-import type { Appointment, MoneyCents } from '../types'
+import type { Appointment, Invoice, MoneyCents } from '../types'
 import { romeDateKey } from './appointmentSchedule'
 import { percentOf, stampDutyForTotal, sumCents } from './money'
 
-type RevenueAppointment = Pick<Appointment, 'total' | 'payments'>
+type RevenueAppointment = Pick<Appointment, 'total' | 'payments'> &
+  Partial<Pick<Appointment, 'id'>>
+type RevenueInvoice = Pick<Invoice, 'appointmentId' | 'stampDuty' | 'paidAt'>
 
 function romeYear(iso: string): number {
   return Number(romeDateKey(iso).slice(0, 4))
@@ -13,18 +15,22 @@ function romeYear(iso: string): number {
  * requested Rome calendar year count. That is the intended reading for the
  * regime forfettario and makes the year boundary independent of device timezone.
  *
- * Stage 8 has no invoice payment date for the recharged stamp yet. We attribute
- * its receipt once, to the first cash payment on that booking; this deterministic
- * rule prevents a booking paid across two years from adding EUR 2.00 twice.
+ * Once an invoice exists, its snapshotted stamp and paidAt determine the stamp
+ * revenue. For older/uninvoiced bookings, the Stage 8 fallback still attributes
+ * it once to the first cash payment. This prevents an appointment and its invoice
+ * from each contributing the same EUR 2.00.
+ *
  * The recharge is deliberately INCLUDED, not netted out: under SPEC.md §4.6 it
  * forms part of her compensation rather than a pass-through expense.
  */
 export function calculateRevenueForYear(
   appointments: readonly RevenueAppointment[],
   year: number,
+  invoices: readonly RevenueInvoice[] = [],
 ): MoneyCents {
-  return sumCents(
-    appointments.map((appointment) => {
+  const invoicedAppointmentIds = new Set(invoices.map(({ appointmentId }) => appointmentId))
+  const appointmentRevenue = sumCents(
+    appointments.map((appointment, index) => {
       const payments = [...appointment.payments].sort((left, right) =>
         left.paidAt.localeCompare(right.paidAt),
       )
@@ -32,20 +38,32 @@ export function calculateRevenueForYear(
       const cashReceived = sumCents(paymentsInYear.map(({ amount }) => amount))
       const firstPayment = payments[0]
       const rechargedStamp =
-        firstPayment && romeYear(firstPayment.paidAt) === year
+        !invoicedAppointmentIds.has(
+          // RevenueAppointment is deliberately a small structural type. Invoice
+          // matching therefore uses the array's full Appointment id when present.
+          appointment.id ?? `missing-${index}`,
+        ) && firstPayment && romeYear(firstPayment.paidAt) === year
           ? stampDutyForTotal(appointment.total)
           : 0
 
       return cashReceived + rechargedStamp
     }),
   )
+  const invoiceStampRevenue = sumCents(
+    invoices
+      .filter((invoice) => invoice.paidAt && romeYear(invoice.paidAt) === year)
+      .map(({ stampDuty }) => stampDuty),
+  )
+
+  return appointmentRevenue + invoiceStampRevenue
 }
 
 export function calculateCurrentYearRevenue(
   appointments: readonly RevenueAppointment[],
   nowIso: string,
+  invoices: readonly RevenueInvoice[] = [],
 ): MoneyCents {
-  return calculateRevenueForYear(appointments, romeYear(nowIso))
+  return calculateRevenueForYear(appointments, romeYear(nowIso), invoices)
 }
 
 export type RevenueMeterBand = 'standard' | 'warning' | 'over'

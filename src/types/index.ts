@@ -226,13 +226,15 @@ export interface Invoice extends EntityMetadata {
   clientSnapshot: Client
   businessSnapshot: BusinessProfile
   issuedAt: ISODateTime
+  serviceDate: ISODateTime
   paidAt?: ISODateTime
   recipientCode: string
-  clientTaxCode?: string
+  clientTaxCode: string
   lineItems: InvoiceLineItem[]
   subtotal: MoneyCents
   stampDuty: MoneyCents
   total: MoneyCents
+  flatRateWording: string
 }
 
 export type StoredEntity = Client | Service | Appointment | Contract | Invoice
