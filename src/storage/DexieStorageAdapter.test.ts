@@ -3,6 +3,12 @@ import 'fake-indexeddb/auto'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { db } from '../db/database'
+import { formatFullDate } from '../lib/dates'
+import {
+  applyServiceDefaults,
+  createDefaultAppointmentDraft,
+  prepareAppointmentForSave,
+} from '../pages/appointmentForm'
 import { eurosToCents } from '../pages/settingsForm'
 import type { BusinessProfile } from '../types'
 import { DexieStorageAdapter } from './DexieStorageAdapter'
@@ -166,5 +172,97 @@ describe('DexieStorageAdapter', () => {
       contractTemplateId: 'standard-bridal',
       active: true,
     })
+  })
+
+  it('round-trips an appointment schedule and keeps it independent from service edits', async () => {
+    const service = await adapter.services.create({
+      name: 'Bridal make-up',
+      description: 'Wedding-day make-up at the client venue.',
+      durationMinutes: 120,
+      basePrice: 45_000,
+      defaultDepositPercent: 30,
+      cancellationTiers: [
+        { daysBefore: 91, retainPercent: 0 },
+        { daysBefore: 30, retainPercent: 50 },
+        { daysBefore: 0, retainPercent: 100 },
+      ],
+      recallTemplates: [
+        {
+          daysBefore: 14,
+          channel: 'whatsapp',
+          messageTemplate: 'Original reminder for {dateLong}.',
+        },
+        {
+          daysBefore: 3,
+          channel: 'email',
+          messageTemplate: 'Original balance reminder: {balanceDue}.',
+        },
+      ],
+      requiresTrial: true,
+      contractTemplateId: 'standard-bridal',
+      active: true,
+    })
+    const draft = {
+      ...applyServiceDefaults(
+        createDefaultAppointmentDraft(new Date('2026-08-01T08:00:00.000Z')),
+        service,
+        undefined,
+      ),
+      clientId: 'client-snapshot',
+      startLocal: '2026-09-14T10:00',
+      endLocal: '2026-09-14T12:00',
+      locationName: 'Sample venue',
+      locationAddress: 'Via di Esempio 1, Rome',
+      balanceDueDate: '2026-09-14',
+    }
+    let recallNumber = 0
+    const prepared = prepareAppointmentForSave(
+      draft,
+      service,
+      undefined,
+      () => `appointment-recall-${++recallNumber}`,
+    ).appointment
+    expect(prepared).toBeDefined()
+
+    const appointment = await adapter.appointments.create(prepared!)
+    const originalCutoffs = structuredClone(appointment.cancellationCutoffs)
+    const originalRecalls = structuredClone(appointment.recalls)
+
+    await adapter.services.put({
+      ...service,
+      cancellationTiers: [
+        { daysBefore: 60, retainPercent: 25 },
+        { daysBefore: 0, retainPercent: 80 },
+      ],
+      recallTemplates: [
+        { daysBefore: 1, channel: 'email', messageTemplate: 'Changed catalogue text.' },
+      ],
+    })
+
+    db.close()
+    await db.open()
+    const stored = await new DexieStorageAdapter().appointments.get(appointment.id)
+
+    expect(stored?.cancellationCutoffs).toEqual(originalCutoffs)
+    expect(stored?.recalls).toEqual(originalRecalls)
+    expect(stored?.cancellationCutoffs.map(({ date }) => formatFullDate(date))).toEqual([
+      '15 June 2026',
+      '15 August 2026',
+      '14 September 2026',
+    ])
+    expect(stored?.recalls).toMatchObject([
+      {
+        id: 'appointment-recall-1',
+        daysBefore: 14,
+        channel: 'whatsapp',
+        messageTemplate: 'Original reminder for {dateLong}.',
+      },
+      {
+        id: 'appointment-recall-2',
+        daysBefore: 3,
+        channel: 'email',
+        messageTemplate: 'Original balance reminder: {balanceDue}.',
+      },
+    ])
   })
 })

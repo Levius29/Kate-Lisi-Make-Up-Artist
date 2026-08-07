@@ -46,6 +46,16 @@ export function normaliseCancellationTiers(
     errors.push('Notice thresholds must be zero or a positive whole number.')
   }
 
+  /*
+   * Without a zero threshold the ladder has a hole: notice given closer than the
+   * lowest threshold matches no tier at all, and the appointment would carry a
+   * cancellation ladder that says nothing about the days just before the date —
+   * exactly when most cancellations happen.
+   */
+  if (tiers.length > 0 && !tiers.some(({ daysBefore }) => daysBefore === 0)) {
+    errors.push('The last band must start at 0 days so every notice period is covered.')
+  }
+
   if (errors.length > 0) return { errors }
 
   return {
