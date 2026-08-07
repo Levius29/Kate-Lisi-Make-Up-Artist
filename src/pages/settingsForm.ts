@@ -94,6 +94,8 @@ export function centsToEuros(cents: number): string {
 export function profileToDraft(profile: BusinessProfile): BusinessProfileDraft {
   return {
     ...profile,
+    // Profiles saved before Stage 6 have no GDPR contact address yet.
+    email: profile.email ?? '',
     nextInvoiceNumber: String(profile.nextInvoiceNumber),
     nextContractNumber: String(profile.nextContractNumber),
     defaultDepositPercent: String(profile.defaultDepositPercent),
@@ -176,6 +178,7 @@ export function prepareProfileForSave(draft: BusinessProfileDraft): ProfileSaveR
 
   required(errors, 'businessName', draft.businessName)
   required(errors, 'registeredAddress', draft.registeredAddress)
+  required(errors, 'email', draft.email)
   required(errors, 'vatNumber', draft.vatNumber)
   required(errors, 'taxCode', draft.taxCode)
   required(errors, 'atecoCode', draft.atecoCode)
@@ -189,6 +192,10 @@ export function prepareProfileForSave(draft: BusinessProfileDraft): ProfileSaveR
 
   if (draft.vatNumber.trim() !== '' && !/^\d{11}$/.test(draft.vatNumber.trim())) {
     errors.vatNumber = 'P.IVA must contain exactly 11 digits.'
+  }
+
+  if (draft.email.trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())) {
+    errors.email = 'Enter a valid email address.'
   }
 
   const iban = normaliseIban(draft.iban)

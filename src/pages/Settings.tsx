@@ -294,6 +294,23 @@ export function Settings() {
         </div>
       </section>
 
+      <section className="mb-6 rounded-3xl border border-line bg-paper/70 p-5 sm:p-6 md:mb-8">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-display text-2xl leading-tight text-ink">Issued contracts</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+              Open immutable contract records and generate their PDFs again at any time.
+            </p>
+          </div>
+          <Link
+            to="/settings/contracts"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-accent px-4 text-sm font-semibold text-accent sm:w-auto"
+          >
+            Open contracts
+          </Link>
+        </div>
+      </section>
+
       <form className="space-y-6 md:space-y-8" noValidate onSubmit={handleSubmit}>
         <FormSection
           title="Identity"
@@ -340,6 +357,22 @@ export function Settings() {
                 </ErrorText>
               ) : null}
             </Field>
+
+            <ConnectedTextInput
+              field="email"
+              label="Data-protection contact email"
+              value={draft.email}
+              errors={errors}
+              onValueChange={updateField}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
+              helper="The contract names this contact address for GDPR data-protection requests."
+            />
 
             <ConnectedTextInput
               field="vatNumber"

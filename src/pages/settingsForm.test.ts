@@ -12,6 +12,7 @@ function completeDraft() {
     ...createDefaultProfileDraft(2030),
     businessName: 'Example Studio',
     registeredAddress: 'Via di Esempio 1, Rome, Italy',
+    email: 'privacy@example.invalid',
     vatNumber: '12345678901',
     taxCode: 'RSSMRA80A01H501U',
     atecoCode: '96.02.02',
@@ -67,6 +68,7 @@ describe('settings profile form', () => {
     const result = prepareProfileForSave({
       ...completeDraft(),
       businessName: '',
+      email: 'not-an-email',
       vatNumber: '123',
       iban: 'IT00 NOT AN IBAN',
       nextInvoiceNumber: '0',
@@ -82,6 +84,7 @@ describe('settings profile form', () => {
     expect(Object.keys(result.errors)).toEqual(
       expect.arrayContaining([
         'businessName',
+        'email',
         'vatNumber',
         'iban',
         'nextInvoiceNumber',

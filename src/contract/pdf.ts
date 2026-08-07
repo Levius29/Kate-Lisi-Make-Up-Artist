@@ -318,25 +318,36 @@ export function buildContractDocDefinition(contract: Contract): Record<string, u
    * immediately above the second line, which is what makes it work.
    */
   content.push(
-    { text: '', margin: [0, 10, 0, 0] },
-    { text: fill(t.signatures.readAndApproved, tokens), style: 'clause' },
-    signatureRow(t.signatures.placeAndDate, t.signatures.theClient, t.signatures.theArtist),
+    /*
+     * Each block is unbreakable so a page break cannot separate a signature line
+     * from what it approves. That matters most for the second block: Articles
+     * 1341-1342 work because the client re-reads the listed clauses and signs
+     * immediately below them. If the list ends on one page and the line sits
+     * alone on the next, the client signs a page showing none of the clauses,
+     * which is exactly the defect the double signature exists to prevent.
+     */
     {
-      table: {
-        widths: ['*'],
-        body: [[{ text: '', margin: [0, 6, 0, 6] }]],
-      },
-      layout: 'noBorders',
-      margin: [0, 6, 0, 6],
+      stack: [
+        { text: fill(t.signatures.readAndApproved, tokens), style: 'clause' },
+        signatureRow(t.signatures.placeAndDate, t.signatures.theClient, t.signatures.theArtist),
+      ],
+      unbreakable: true,
+      margin: [0, 14, 0, 0],
     },
-    { text: t.signatures.specificApprovalHeading, style: 'clauseHeading', margin: [0, 14, 0, 6] },
-    { text: fill(t.signatures.specificApprovalIntro, tokens), style: 'clause' },
     {
-      ul: t.signatures.onerousClauses.map((item) => fill(item, tokens)),
-      style: 'clause',
-      margin: [0, 2, 0, 10],
+      stack: [
+        { text: t.signatures.specificApprovalHeading, style: 'clauseHeading', margin: [0, 0, 0, 6] },
+        { text: fill(t.signatures.specificApprovalIntro, tokens), style: 'clause' },
+        {
+          ul: t.signatures.onerousClauses.map((item) => fill(item, tokens)),
+          style: 'clause',
+          margin: [0, 2, 0, 10],
+        },
+        signatureRow(t.signatures.placeAndDate, t.signatures.theClientSecondSignature),
+      ],
+      unbreakable: true,
+      margin: [0, 20, 0, 0],
     },
-    signatureRow(t.signatures.placeAndDate, t.signatures.theClientSecondSignature),
   )
 
   return {

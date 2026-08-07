@@ -18,6 +18,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextArea, TextInput } from '../components/ui/TextInput'
+import { ContractIssueError, issueContract } from '../contract/issue'
+import { presentContractPdf } from '../contract/presentPdf'
 import {
   cutoffMilestoneLabel,
   romeDateKey,
@@ -30,6 +32,7 @@ import {
   formatTime,
   formatTimeWithZone,
 } from '../lib/dates'
+import { formatEUR } from '../lib/money'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type {
@@ -37,6 +40,8 @@ import type {
   AppointmentStatus,
   BusinessProfile,
   Client,
+  Contract,
+  ContractLocale,
   Service,
 } from '../types'
 import {
@@ -63,6 +68,7 @@ interface CalendarData {
   appointments: Appointment[]
   clients: Client[]
   services: Service[]
+  contracts: Contract[]
   profile: BusinessProfile | undefined
 }
 
@@ -115,10 +121,6 @@ function parseCalendarRoute(pathname: string): CalendarRoute {
 
 function clientName(client: Client | undefined): string {
   return client ? `${client.firstName} ${client.lastName}` : 'Client unavailable'
-}
-
-function money(cents: number): string {
-  return `EUR ${(cents / 100).toFixed(2)}`
 }
 
 function dateFromKey(key: string): Date {
@@ -343,8 +345,8 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
           const name = longDateForKey(key).split(' ')[0] ?? ''
           return (
             <div key={key} className="border-b border-line px-1 py-3 text-center text-[0.65rem] font-bold uppercase tracking-wide text-muted sm:text-xs">
-              <span className="md:hidden">{name.slice(0, 3)}</span>
-              <span className="hidden md:inline">{name}</span>
+              <span className="md:hidden lg:inline xl:hidden">{name.slice(0, 3)}</span>
+              <span className="hidden md:inline lg:hidden xl:inline">{name}</span>
             </div>
           )
         })}
@@ -526,10 +528,270 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
   )
 }
 
-function AppointmentDetail({ appointment, client, service, parent, children, onClose, onEdit, onOpenLinked }: {
+function dateTimeLocalValue(iso: string): string {
+  const date = new Date(iso)
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
+}
+
+function readableError(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+function LanguageChoice({ value, onChange, disabled = false }: {
+  value: ContractLocale
+  onChange: (language: ContractLocale) => void
+  disabled?: boolean
+}) {
+  return (
+    <fieldset>
+      <legend className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Contract language</legend>
+      <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Contract language">
+        {(['en', 'it'] as const).map((language) => (
+          <label
+            key={language}
+            className={`min-h-11 justify-center rounded-xl border px-3 text-sm font-bold ${value === language ? 'border-accent bg-accent text-paper' : 'border-line bg-paper text-muted'}`}
+          >
+            <input
+              type="radio"
+              name="contract-language"
+              value={language}
+              checked={value === language}
+              onChange={() => onChange(language)}
+              disabled={disabled}
+              className="sr-only"
+            />
+            {language === 'en' ? 'EN · English' : 'IT · Italiano'}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function ContractPanel({ appointment, contract, profile }: {
+  appointment: Appointment
+  contract: Contract | undefined
+  profile: BusinessProfile | undefined
+}) {
+  const [language, setLanguage] = useState<ContractLocale>('en')
+  const [showAnother, setShowAnother] = useState(false)
+  const [issueState, setIssueState] = useState<'idle' | 'issuing' | 'pdf'>('idle')
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [signatureOpen, setSignatureOpen] = useState(false)
+  const [signedLocal, setSignedLocal] = useState(() =>
+    dateTimeLocalValue(contract?.signedAt ?? new Date().toISOString()),
+  )
+  const [signedFileNote, setSignedFileNote] = useState(contract?.signedFileNote ?? '')
+  const [signatureBusy, setSignatureBusy] = useState(false)
+
+  async function openPdf(record: Contract) {
+    setPdfBusy(true)
+    setMessage('Preparing the contract PDF…')
+    try {
+      const result = await presentContractPdf(record)
+      setMessage(
+        result === 'cancelled'
+          ? 'Sharing was cancelled. The issued contract is still saved.'
+          : result === 'shared'
+            ? 'The contract is ready in the share sheet.'
+            : 'The contract PDF opened in a new tab.',
+      )
+    } catch (error) {
+      setMessage(readableError(error, 'The contract PDF could not be prepared. Try again.'))
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+
+  async function issue() {
+    // Profiles saved by an earlier app version can lack this newly-required
+    // field at runtime even though the current TypeScript schema requires it.
+    if (profile && !profile.email?.trim()) {
+      setMessage('Add a contact email in Settings: the contract names it for data-protection requests.')
+      return
+    }
+
+    setIssueState('issuing')
+    setMessage('Issuing the contract…')
+    try {
+      const issued = await issueContract(storage, appointment.id, language)
+      setIssueState('pdf')
+      setMessage(`Contract ${issued.contractNumber} was issued. Preparing its PDF…`)
+      try {
+        const result = await presentContractPdf(issued)
+        setMessage(
+          result === 'cancelled'
+            ? `Contract ${issued.contractNumber} was issued and saved; sharing was cancelled.`
+            : result === 'shared'
+              ? `Contract ${issued.contractNumber} was issued and is ready in the share sheet.`
+              : `Contract ${issued.contractNumber} was issued and its PDF opened in a new tab.`,
+        )
+      } catch (error) {
+        setMessage(
+          `Contract ${issued.contractNumber} was issued and saved, but the PDF could not be opened: ${readableError(error, 'try again from this appointment.')}`,
+        )
+      }
+    } catch (error) {
+      setMessage(
+        error instanceof ContractIssueError
+          ? error.message
+          : readableError(error, 'The contract could not be issued. Try again.'),
+      )
+    } finally {
+      setIssueState('idle')
+    }
+  }
+
+  function openSignatureForm() {
+    setSignedLocal(dateTimeLocalValue(contract?.signedAt ?? new Date().toISOString()))
+    setSignedFileNote(contract?.signedFileNote ?? '')
+    setSignatureOpen(true)
+    setMessage('')
+  }
+
+  async function saveSignature(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!contract) return
+    const signedDate = new Date(signedLocal)
+    if (signedLocal === '' || Number.isNaN(signedDate.getTime())) {
+      setMessage('Choose a valid signature date and time.')
+      return
+    }
+
+    setSignatureBusy(true)
+    setMessage('Saving the signature record…')
+    try {
+      const { signedFileNote: _oldNote, ...withoutNote } = contract
+      await storage.contracts.put({
+        ...withoutNote,
+        signedAt: signedDate.toISOString(),
+        ...(signedFileNote.trim() ? { signedFileNote: signedFileNote.trim() } : {}),
+      })
+      setSignatureOpen(false)
+      setMessage('Signature details saved on the issued contract.')
+    } catch (error) {
+      setMessage(readableError(error, 'The signature details could not be saved. Try again.'))
+    } finally {
+      setSignatureBusy(false)
+    }
+  }
+
+  const busy = issueState !== 'idle' || pdfBusy
+
+  return (
+    <section className="mt-5 min-w-0 rounded-2xl border border-accent/35 bg-canvas p-4 sm:p-5">
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Contract</p>
+        {contract ? (
+          <>
+            <div className="mt-2 flex min-w-0 flex-wrap items-baseline justify-between gap-2">
+              <h3 className="break-words font-display text-2xl text-ink">{contract.contractNumber}</h3>
+              <span className="rounded-full border border-line bg-paper px-2.5 py-1 text-xs font-bold text-muted">
+                {contract.language === 'en' ? 'English' : 'Italian'}
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Issued {formatFullDate(contract.generatedAt)} at {formatTimeWithZone(contract.generatedAt)}. This snapshot cannot be edited.
+            </p>
+            <button
+              type="button"
+              onClick={() => void openPdf(contract)}
+              disabled={busy}
+              className="mt-4 min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-paper disabled:opacity-60"
+            >
+              {pdfBusy ? 'Preparing PDF…' : 'Open or share PDF'}
+            </button>
+
+            <div className="mt-4 border-t border-line pt-4">
+              {contract.signedAt ? (
+                <p className="text-sm leading-6 text-ink">
+                  <strong>Signed:</strong> {formatFullDate(contract.signedAt)} at {formatTimeWithZone(contract.signedAt)}
+                  {contract.signedFileNote ? <span className="mt-1 block break-words text-muted">{contract.signedFileNote}</span> : null}
+                </p>
+              ) : (
+                <p className="text-sm leading-6 text-muted">No client signature has been recorded yet.</p>
+              )}
+
+              {!signatureOpen ? (
+                <button type="button" onClick={openSignatureForm} className="mt-3 min-h-11 rounded-xl border border-accent px-4 text-sm font-bold text-accent">
+                  {contract.signedAt ? 'Edit signature record' : 'Mark as signed'}
+                </button>
+              ) : (
+                <form className="mt-4 space-y-4" onSubmit={(event) => void saveSignature(event)}>
+                  <Field>
+                    <FieldLabel htmlFor={`contract-${contract.id}-signedAt`} required>Signed date and time</FieldLabel>
+                    <TextInput
+                      id={`contract-${contract.id}-signedAt`}
+                      type="datetime-local"
+                      value={signedLocal}
+                      onChange={(event) => setSignedLocal(event.target.value)}
+                      required
+                    />
+                    {signedLocal && !Number.isNaN(new Date(signedLocal).getTime()) ? (
+                      <HelperText>{formatFullDate(new Date(signedLocal).toISOString())} at {formatTimeWithZone(new Date(signedLocal).toISOString())}</HelperText>
+                    ) : null}
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor={`contract-${contract.id}-signedFileNote`}>Signed-file note</FieldLabel>
+                    <TextArea
+                      id={`contract-${contract.id}-signedFileNote`}
+                      rows={3}
+                      value={signedFileNote}
+                      onChange={(event) => setSignedFileNote(event.target.value)}
+                      placeholder="Optional — e.g. saved in Files or received on WhatsApp"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setSignatureOpen(false)} disabled={signatureBusy} className="min-h-11 rounded-xl border border-line px-3 text-sm font-bold text-muted">Cancel</button>
+                    <button type="submit" disabled={signatureBusy} className="min-h-11 rounded-xl bg-accent px-3 text-sm font-bold text-paper disabled:opacity-60">{signatureBusy ? 'Saving…' : 'Save signature'}</button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            <div className="mt-5 border-t border-line pt-4">
+              {!showAnother ? (
+                <button type="button" onClick={() => { setShowAnother(true); setLanguage('en'); setMessage('') }} className="min-h-11 text-left text-sm font-bold text-accent underline decoration-accent/40 underline-offset-4">
+                  Issue another contract for this appointment
+                </button>
+              ) : (
+                <div className="rounded-xl border border-amber-700/30 bg-amber-50 p-3">
+                  <p className="text-sm leading-5 text-amber-950">This creates a second immutable contract with a new sequential number. The existing contract remains in the Contracts list.</p>
+                  <div className="mt-3"><LanguageChoice value={language} onChange={setLanguage} disabled={busy} /></div>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <button type="button" onClick={() => setShowAnother(false)} disabled={busy} className="min-h-11 rounded-xl border border-line bg-paper px-3 text-sm font-bold text-muted">Cancel</button>
+                    <button type="button" onClick={() => void issue()} disabled={busy} className="min-h-11 rounded-xl bg-accent px-3 text-sm font-bold text-paper disabled:opacity-60">{issueState === 'issuing' ? 'Issuing…' : issueState === 'pdf' ? 'Preparing PDF…' : 'Issue second contract'}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="mt-2 font-display text-2xl text-ink">Issue a ready-to-sign PDF</h3>
+            <p className="mt-2 text-sm leading-6 text-muted">The appointment, client, service, fees and business details are frozen when issued.</p>
+            <div className="mt-4"><LanguageChoice value={language} onChange={setLanguage} disabled={busy} /></div>
+            <button type="button" onClick={() => void issue()} disabled={busy} className="mt-4 min-h-12 w-full rounded-xl bg-accent px-4 text-sm font-bold text-paper disabled:opacity-60">
+              {issueState === 'issuing' ? 'Issuing contract…' : issueState === 'pdf' ? 'Preparing PDF…' : 'Issue and open contract'}
+            </button>
+          </>
+        )}
+      </div>
+      <div className="min-h-6" aria-live="polite">
+        {message ? <p className="mt-3 break-words text-sm font-semibold leading-6 text-muted">{message}</p> : null}
+      </div>
+    </section>
+  )
+}
+
+function AppointmentDetail({ appointment, client, service, contract, profile, parent, children, onClose, onEdit, onOpenLinked }: {
   appointment: Appointment
   client: Client | undefined
   service: Service | undefined
+  contract: Contract | undefined
+  profile: BusinessProfile | undefined
   parent: Appointment | undefined
   children: Appointment[]
   onClose: () => void
@@ -562,11 +824,13 @@ function AppointmentDetail({ appointment, client, service, parent, children, onC
         <DetailRow label="Venue">{appointment.locationName}<br />{appointment.locationAddress}</DetailRow>
         <DetailRow label="People">{appointment.peopleCount}</DetailRow>
         {appointment.ceremonyTime ? <DetailRow label="Ceremony">{formatFullDateTimeWithZone(appointment.ceremonyTime)}</DetailRow> : null}
-        <DetailRow label="Booking total">{money(appointment.total)}</DetailRow>
-        <DetailRow label="Deposit">{appointment.depositPercent}% · {money(appointment.depositAmount)}</DetailRow>
-        <DetailRow label="Money owed"><strong className="text-base">{money(owed)}</strong></DetailRow>
+        <DetailRow label="Booking total">{formatEUR(appointment.total)}</DetailRow>
+        <DetailRow label="Deposit">{appointment.depositPercent}% · {formatEUR(appointment.depositAmount)}</DetailRow>
+        <DetailRow label="Money owed"><strong className="text-base">{formatEUR(owed)}</strong></DetailRow>
         <DetailRow label="Balance due">{formatFullDate(appointment.balanceDueAt ?? appointment.startAt)}</DetailRow>
       </dl>
+
+      <ContractPanel appointment={appointment} contract={contract} profile={profile} />
 
       {(parent || children.length > 0) ? (
         <section className="mt-5 rounded-2xl border border-accent/35 bg-canvas p-4">
@@ -820,7 +1084,7 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
             <Field>
               <FieldLabel htmlFor="appointment-depositPercent" required>Deposit percentage</FieldLabel>
               <TextInput id="appointment-depositPercent" inputMode="decimal" value={draft.depositPercent} onChange={(event) => update('depositPercent', event.target.value)} hasError={Boolean(errors.depositPercent)} required />
-              <HelperText>Freely editable for this booking. Deposit: {deposit === undefined ? '—' : money(deposit)}</HelperText>
+              <HelperText>Freely editable for this booking. Deposit: {deposit === undefined ? '—' : formatEUR(deposit)}</HelperText>
               {errors.depositPercent ? <ErrorText>{errors.depositPercent}</ErrorText> : null}
             </Field>
             <Field>
@@ -830,7 +1094,7 @@ function AppointmentEditor({ initial, clients, services, appointments, profile, 
               {errors.balanceDueDate ? <ErrorText>{errors.balanceDueDate}</ErrorText> : null}
             </Field>
           </div>
-          <p className="mt-5 text-right font-display text-2xl text-ink">Total {total === undefined ? '—' : money(total)}</p>
+          <p className="mt-5 text-right font-display text-2xl text-ink">Total {total === undefined ? '—' : formatEUR(total)}</p>
         </FormSection>
 
         <FormSection title="Private notes" description="Working notes stay on this device and are not client-facing.">
@@ -861,21 +1125,24 @@ export function Calendar() {
   const [anchorKey, setAnchorKey] = useState(todayKey)
   const [selectedKey, setSelectedKey] = useState(todayKey)
   const data = useLive<CalendarData>(async () => {
-    const [appointments, clients, services, profile] = await Promise.all([
+    const [appointments, clients, services, contracts, profile] = await Promise.all([
       storage.appointments.list({ orderBy: 'startAt' }),
       storage.clients.list({ includeDeleted: true }),
       storage.services.list({ includeDeleted: true }),
+      storage.contracts.list(),
       storage.profile.get(),
     ])
-    return { appointments, clients, services, profile }
+    return { appointments, clients, services, contracts, profile }
   }, [])
 
   const appointments = data?.appointments ?? []
   const clients = data?.clients ?? []
   const services = data?.services ?? []
+  const contracts = data?.contracts ?? []
   const clientsById = useMemo(() => new Map(clients.map((client) => [client.id, client])), [clients])
   const servicesById = useMemo(() => new Map(services.map((service) => [service.id, service])), [services])
   const appointmentsById = useMemo(() => new Map(appointments.map((appointment) => [appointment.id, appointment])), [appointments])
+  const contractsById = useMemo(() => new Map(contracts.map((contract) => [contract.id, contract])), [contracts])
   const childAppointments = useMemo(() => {
     const map = new Map<string, Appointment[]>()
     appointments.forEach((appointment) => {
@@ -928,6 +1195,8 @@ export function Calendar() {
       appointment={selectedAppointment}
       client={clientsById.get(selectedAppointment.clientId)}
       service={servicesById.get(selectedAppointment.serviceId)}
+      contract={selectedAppointment.contractId ? contractsById.get(selectedAppointment.contractId) : undefined}
+      profile={data.profile}
       parent={selectedAppointment.parentAppointmentId ? appointmentsById.get(selectedAppointment.parentAppointmentId) : undefined}
       children={childAppointments.get(selectedAppointment.id) ?? []}
       onClose={() => navigate('/calendar')}

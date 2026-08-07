@@ -10,6 +10,7 @@ import {
   substituteMergeFields,
   type MergeFieldValues,
 } from '../lib/mergeFields'
+import { formatEUR } from '../lib/money'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type { Service } from '../types'
@@ -26,7 +27,6 @@ import {
   type ServiceDraft,
   type ServiceFieldErrors,
 } from './serviceForm'
-import { centsToEuros } from './settingsForm'
 
 const SAMPLE_MERGE_VALUES: MergeFieldValues = {
   firstName: 'Sofia',
@@ -431,15 +431,29 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
             />
           </div>
           <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="rounded-2xl border border-line bg-canvas/50 px-4 py-2.5 text-sm font-semibold text-ink">
+            <label className="rounded-2xl border border-line bg-canvas/50 px-4 py-3 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
                 checked={draft.requiresTrial}
                 onChange={(event) => updateField('requiresTrial', event.target.checked)}
               />
-              Trial required
+              <span className="min-w-0">
+                <span className="block">Trial required</span>
+                <span className="mt-1 block font-normal leading-5 text-muted">A trial is a styling rehearsal.</span>
+              </span>
             </label>
-            <label className="rounded-2xl border border-line bg-canvas/50 px-4 py-2.5 text-sm font-semibold text-ink">
+            <label className="rounded-2xl border border-line bg-canvas/50 px-4 py-3 text-sm font-semibold text-ink">
+              <input
+                type="checkbox"
+                checked={draft.requiresPatchTest}
+                onChange={(event) => updateField('requiresPatchTest', event.target.checked)}
+              />
+              <span className="min-w-0">
+                <span className="block">Patch test required</span>
+                <span className="mt-1 block font-normal leading-5 text-muted">A patch test is a safety check, separate from a styling trial.</span>
+              </span>
+            </label>
+            <label className="rounded-2xl border border-line bg-canvas/50 px-4 py-3 text-sm font-semibold text-ink sm:col-span-2">
               <input
                 type="checkbox"
                 checked={draft.active}
@@ -680,10 +694,6 @@ function ServiceEditor({ initialService, onCancel, onSaved }: ServiceEditorProps
   )
 }
 
-function money(cents: number | undefined): string {
-  return cents === undefined ? 'Not set' : `EUR ${centsToEuros(cents)}`
-}
-
 function ServiceDetail({
   service,
   onToggleActive,
@@ -751,12 +761,13 @@ function ServiceDetail({
         <dl className="mt-5 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             ['Duration', `${service.durationMinutes} minutes`],
-            ['Base price', money(service.basePrice)],
-            ['Per-person price', money(service.perPersonPrice)],
-            ['Travel per km', money(service.travelFeePerKm)],
-            ['Flat travel fee', money(service.travelFeeFlat)],
+            ['Base price', formatEUR(service.basePrice)],
+            ['Per-person price', service.perPersonPrice === undefined ? 'Not set' : formatEUR(service.perPersonPrice)],
+            ['Travel per km', service.travelFeePerKm === undefined ? 'Not set' : formatEUR(service.travelFeePerKm)],
+            ['Flat travel fee', service.travelFeeFlat === undefined ? 'Not set' : formatEUR(service.travelFeeFlat)],
             ['Default deposit', `${service.defaultDepositPercent}%`],
             ['Requires trial', service.requiresTrial ? 'Yes' : 'No'],
+            ['Requires patch test', service.requiresPatchTest ? 'Yes' : 'No'],
             ['Contract template ID', service.contractTemplateId],
           ].map(([label, value]) => (
             <div key={label} className="min-w-0 border-b border-line pb-3">
@@ -830,7 +841,7 @@ function ServiceList({ services, onSeed }: { services: Service[] | undefined; on
       >
         <span className="min-w-0">
           <span className="block break-words text-base font-semibold text-ink">{service.name}</span>
-          <span className="mt-1 block text-sm text-muted">{service.durationMinutes} min · {money(service.basePrice)}</span>
+          <span className="mt-1 block text-sm text-muted">{service.durationMinutes} min · {formatEUR(service.basePrice)}</span>
         </span>
         <span className="shrink-0 text-lg text-accent" aria-hidden="true">→</span>
       </Link>

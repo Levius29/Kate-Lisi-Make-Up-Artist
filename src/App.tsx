@@ -4,6 +4,7 @@ import { AppShell } from './components/AppShell'
 import { IosInstallGate } from './components/IosInstallGate'
 import { Calendar } from './pages/Calendar'
 import { Clients } from './pages/Clients'
+import { Contracts } from './pages/Contracts'
 import { Services } from './pages/Services'
 import { Settings } from './pages/Settings'
 import { Today } from './pages/Today'
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="money" element={<p>Not built yet — stage 8</p>} />
             <Route path="settings" element={<Settings />} />
             <Route path="services/*" element={<Services />} />
+            <Route path="settings/contracts" element={<Contracts />} />
             <Route path="*" element={<Navigate replace to="/" />} />
           </Route>
         </Routes>

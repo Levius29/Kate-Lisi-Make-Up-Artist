@@ -218,6 +218,31 @@ describe('the double signature block', () => {
     expect(text).toContain('The Client')
     expect(text).toContain('second signature')
   })
+
+  /*
+   * Found by reading a rendered PDF: the clause list ended one page and the
+   * signature line began the next, so the client would have signed a page
+   * showing none of the clauses it approves. Articles 1341-1342 work precisely
+   * because the listed clauses sit immediately above the line.
+   */
+  it('keeps each signature block on a single page', () => {
+    const content = buildContractDocDefinition(contract()).content as Record<string, unknown>[]
+    const blocks = content.filter((node) => node.unbreakable === true)
+    expect(blocks).toHaveLength(2)
+
+    const flatten = (node: unknown): string => {
+      if (typeof node === 'string') return node
+      if (Array.isArray(node)) return node.map(flatten).join(' ')
+      if (node && typeof node === 'object') return Object.values(node).map(flatten).join(' ')
+      return ''
+    }
+    const approval = flatten(blocks[1])
+    // The clause list and the line it authorises must live in the same block.
+    expect(approval).toContain('Articles 1341 and 1342')
+    expect(approval).toContain('clause 4')
+    expect(approval).toContain('clause 10')
+    expect(approval).toContain('second signature')
+  })
 })
 
 describe('the image release reproduces the granular choice', () => {
