@@ -27,8 +27,9 @@
  *    as intended — in particular the set-off of sums already paid as caparra against
  *    the penalty due, in the last paragraph of clause 5.
  *
- * 2. Clause 10 confers exclusive jurisdiction on the Courts of Rome, and clause 11
- *    lists it among the clauses approved by a second, separate signature under
+ * 2. Clause 10 confers exclusive jurisdiction on the Courts of Rome, and the
+ *    specific-approval block at the end lists it among the clauses approved by a
+ *    second, separate signature under
  *    artt. 1341–1342 c.c. Please note that where the client is a consumer, a clause
  *    derogating from the consumer's forum (art. 33(2)(u) Codice del Consumo) is
  *    presumed vexatious and the double signature does not by itself save it. Most of
@@ -39,6 +40,40 @@
  * 3. Clause 8 states a ten-year retention period by reference to art. 2220 c.c. for
  *    accounting records, and a shorter period for health data (allergies). Please
  *    confirm both periods.
+ *
+ * 4. Clauses 11 and 12 were added in template version 1.1.0 at the owner's request,
+ *    drawn from the operational terms of the agreement she uses in practice today.
+ *    They are appended after clause 10 rather than inserted in subject order, because
+ *    the existing clauses cross-refer to one another by number in both languages and
+ *    renumbering them would have meant rewriting every one of those references.
+ *    Two points for review:
+ *      (a) Clause 11 keeps the whole fee payable where a booked person declines or
+ *          fails to attend, mitigated by the right to put another person in their
+ *          place. It is listed for specific approval under artt. 1341–1342 c.c. Where
+ *          the client is a consumer, please consider art. 33(2)(e) Codice del Consumo
+ *          and whether the substitution right is enough to rebut the presumption.
+ *      (b) Clause 12 hard-codes two commercial terms taken from her current
+ *          agreement: the accompaniment service runs to 21:00 and each further hour
+ *          is EUR 100.00. They are printed as fixed text, not as {tokens}, because
+ *          the contract snapshot carries no field for them. If she changes either
+ *          figure, this file must change with it — the numbers will not follow the
+ *          service catalogue.
+ *
+ * 5. The agreement she uses today contains four terms that were deliberately NOT
+ *    carried across, and that she should be advised on directly:
+ *      (a) "payable as one payment in cash — no exceptions". The ceiling on cash
+ *          transfers between different parties is EUR 5,000 (art. 49 D.Lgs.
+ *          231/2007, threshold as amended by L. 197/2022 with effect from 1 January
+ *          2023) and the sanction falls on payer and payee alike. The specimen she
+ *          supplied totals EUR 4,650. Please confirm the ceiling currently in force
+ *          and advise her on a compliant payment clause.
+ *      (b) A clause capping her entire liability at the return of the deposit.
+ *          Consider art. 1229 c.c. and art. 33(2)(b) Codice del Consumo.
+ *      (c) A 5% surcharge on payments made through PayPal. Consider art. 62
+ *          D.Lgs. 231/2007 on surcharging consumer payments.
+ *      (d) An opt-out image release ("unless previously discussed and approved").
+ *          Clause 9 of this template already replaces it with an explicit opt-in
+ *          choice of four options, which the application records per client.
  * ---------------------------------------------------------------------------------
  *
  * Placeholders are written as {token} and are substituted by src/contract/pdf.ts from
@@ -47,7 +82,7 @@
  * currency ("EUR 450.00") before it reaches this template.
  */
 
-export const TEMPLATE_VERSION = '1.0.0';
+export const TEMPLATE_VERSION = '1.1.0';
 
 export type ContractLocale = 'en' | 'it';
 
@@ -75,6 +110,8 @@ export interface ContractText {
     dataProtection: Clause;
     imageRelease: Clause;
     governingLaw: Clause;
+    performance: Clause;
+    accompaniment: Clause;
   };
   /** Row patterns for the cancellation ladder table in clause 5. */
   ladder: {
@@ -251,6 +288,32 @@ const en: ContractText = {
         'This document, drawn up in the English language, is the text agreed between the parties. Where an Italian version is also issued, it is issued for convenience only.',
       ],
     },
+
+    performance: {
+      number: '11',
+      heading: 'ATTENDANCE, TIMING AND WORKING CONDITIONS',
+      paragraphs: [
+        'The times stated in clause 2 are the beginning and the end of the engagement. Each application requires a set period of time, and the schedule is calculated on the number of persons stated in clause 2; it does not extend in order to recover delay.',
+        'Every person to be made up must be present and ready at the time set for that person. Where a person is not available at that time, the Artist performs the remaining applications as scheduled and is not required to make up the time lost.',
+        'Where more than one person is to be made up, all the applications take place at the same venue and run consecutively, without interruption between one and the next.',
+        'The Client makes available at the venue, for the Artist\'s use, a table or working surface with a chair, adequate lighting and access to a power socket.',
+        'Services requested on the day in addition to those described in clause 2 are performed only if the Artist agrees and if the schedule allows, and are charged in addition to the fee stated in clause 3.',
+        'The number of persons and of services stated in clause 2 is binding, and the fee stated in clause 3 remains payable in full where a person declines the service or does not attend. The Client may put another person in the place of one who does not attend, provided that the total number of services and the time required to perform them do not change.',
+      ],
+    },
+
+    accompaniment: {
+      number: '12',
+      heading: 'ACCOMPANIMENT SERVICE',
+      paragraphs: [
+        'This clause applies only where the services described in clause 2 expressly include the accompaniment service. Where they do not, this clause has no effect.',
+        'The accompaniment service is provided to the bride alone. It does not extend to bridesmaids, to the mothers of the spouses, or to any other guest.',
+        'The accompaniment service is included until 21:00 on the day of the engagement. Each hour after that time, whether complete or begun, is charged at EUR 100.00.',
+        'Changes of hairstyle for the bride are included for the duration of the accompaniment service. Changes of hairstyle for any other person are quoted separately according to the style requested.',
+        'Touch-ups to persons other than the bride during the accompaniment service are not included and are charged in addition.',
+        'Any further service requested during the accompaniment service must be agreed in writing before it is performed.',
+      ],
+    },
   },
 
   ladder: {
@@ -292,7 +355,8 @@ const en: ContractText = {
       'clause 5 (withdrawal by the Client and penalty clause graduated by date, and set-off of the caparra against the penalty);',
       'clause 6 (supervening impossibility, force majeure, and the limit of a single postponement within twelve months);',
       'clause 7 (declaration on allergies and patch test, and exclusion of the Artist\'s liability for conditions not disclosed);',
-      'clause 10 (governing law and exclusive jurisdiction of the Courts of {courtOfJurisdiction}).',
+      'clause 10 (governing law and exclusive jurisdiction of the Courts of {courtOfJurisdiction});',
+      'clause 11 (the fee remaining payable in full where a person declines the service or does not attend, and the conditions governing substitution).',
     ],
     theClientSecondSignature: 'The Client — second signature, for specific approval of the clauses listed above',
   },
@@ -431,6 +495,32 @@ const it: ContractText = {
         'Il presente documento, redatto in lingua italiana, costituisce il testo concordato tra le parti.',
       ],
     },
+
+    performance: {
+      number: '11',
+      heading: 'PRESENZA, TEMPI E CONDIZIONI DI LAVORO',
+      paragraphs: [
+        'Gli orari indicati all\'articolo 2 costituiscono l\'inizio e il termine della prestazione. Ciascuna applicazione richiede un tempo determinato e la programmazione è calcolata sul numero di persone indicato all\'articolo 2; essa non si estende al fine di recuperare eventuali ritardi.',
+        'Ogni persona da truccare deve essere presente e pronta all\'orario per essa fissato. Qualora una persona non sia disponibile a tale orario, la Truccatrice esegue le restanti applicazioni secondo la programmazione e non è tenuta a recuperare il tempo perduto.',
+        'Qualora le persone da truccare siano più di una, tutte le applicazioni si svolgono presso il medesimo luogo e in successione continua, senza interruzioni tra l\'una e l\'altra.',
+        'Il Cliente mette a disposizione presso il luogo della prestazione, per l\'uso della Truccatrice, un tavolo o un piano di lavoro con una sedia, un\'illuminazione adeguata e l\'accesso a una presa di corrente.',
+        'Le prestazioni richieste in giornata ulteriori rispetto a quelle descritte all\'articolo 2 sono eseguite soltanto previo consenso della Truccatrice e compatibilmente con la programmazione, e sono conteggiate in aggiunta al corrispettivo indicato all\'articolo 3.',
+        'Il numero di persone e di prestazioni indicato all\'articolo 2 è vincolante e il corrispettivo indicato all\'articolo 3 resta dovuto per intero qualora una persona rinunci alla prestazione o non si presenti. Il Cliente può sostituire con altra persona quella che non si presenti, purché non mutino il numero complessivo delle prestazioni né il tempo necessario a eseguirle.',
+      ],
+    },
+
+    accompaniment: {
+      number: '12',
+      heading: 'SERVIZIO DI ACCOMPAGNAMENTO',
+      paragraphs: [
+        'Il presente articolo si applica soltanto qualora le prestazioni descritte all\'articolo 2 comprendano espressamente il servizio di accompagnamento. In caso contrario, il presente articolo non produce effetti.',
+        'Il servizio di accompagnamento è reso alla sola sposa. Esso non si estende alle damigelle, alle madri degli sposi né ad alcun altro invitato.',
+        'Il servizio di accompagnamento è compreso fino alle ore 21:00 del giorno della prestazione. Ogni ora successiva, compiuta o iniziata, è conteggiata in EUR 100,00.',
+        'I cambi di acconciatura della sposa sono compresi per tutta la durata del servizio di accompagnamento. I cambi di acconciatura di ogni altra persona sono preventivati separatamente in base all\'acconciatura richiesta.',
+        'I ritocchi a persone diverse dalla sposa durante il servizio di accompagnamento non sono compresi e sono conteggiati in aggiunta.',
+        'Ogni ulteriore prestazione richiesta durante il servizio di accompagnamento deve essere concordata per iscritto prima della sua esecuzione.',
+      ],
+    },
   },
 
   ladder: {
@@ -472,7 +562,8 @@ const it: ContractText = {
       'articolo 5 (recesso del Cliente e clausola penale graduata per data, con imputazione della caparra alla penale);',
       'articolo 6 (impossibilità sopravvenuta, forza maggiore e limite di un solo rinvio entro dodici mesi);',
       'articolo 7 (dichiarazione su allergie e patch test ed esclusione di responsabilità della Truccatrice per condizioni non dichiarate);',
-      'articolo 10 (legge applicabile e competenza esclusiva del Foro di {courtOfJurisdiction}).',
+      'articolo 10 (legge applicabile e competenza esclusiva del Foro di {courtOfJurisdiction});',
+      'articolo 11 (corrispettivo dovuto per intero in caso di rinuncia o mancata presentazione di una persona, e condizioni della sostituzione).',
     ],
     theClientSecondSignature: 'Il Cliente — seconda sottoscrizione, per approvazione specifica delle clausole sopra elencate',
   },

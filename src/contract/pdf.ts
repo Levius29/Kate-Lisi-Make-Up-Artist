@@ -269,6 +269,8 @@ export function buildContractDocDefinition(contract: Contract): Record<string, u
     'dataProtection',
     'imageRelease',
     'governingLaw',
+    'performance',
+    'accompaniment',
   ] as const) {
     const c = t.clauses[key]
     content.push({ text: `${c.number}. ${c.heading}`, style: 'clauseHeading' })

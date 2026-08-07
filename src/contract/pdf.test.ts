@@ -312,3 +312,54 @@ describe('page furniture', () => {
     expect(footer.text).toContain('page 2 of 3')
   })
 })
+
+/*
+ * Clauses 11 and 12 came from the agreement the owner uses in practice, added in
+ * template 1.1.0. They are appended after clause 10 rather than inserted in subject
+ * order, because the older clauses cross-refer to each other by number in both
+ * languages. These guard that they are actually printed — a clause defined in the
+ * template but missing from the render order in pdf.ts would fail silently.
+ */
+describe('the operational clauses taken from the working agreement', () => {
+  it('prints attendance and accompaniment in English', () => {
+    const text = allText(buildContractDocDefinition(contract()))
+    expect(text).toContain('11. ATTENDANCE, TIMING AND WORKING CONDITIONS')
+    expect(text).toContain('12. ACCOMPANIMENT SERVICE')
+  })
+
+  it('prints them in Italian too', () => {
+    const text = allText(buildContractDocDefinition(contract({ language: 'it' })))
+    expect(text).toContain('11. PRESENZA, TEMPI E CONDIZIONI DI LAVORO')
+    expect(text).toContain('12. SERVIZIO DI ACCOMPAGNAMENTO')
+  })
+
+  it('keeps the substitution right that balances the fee remaining payable in full', () => {
+    const text = allText(buildContractDocDefinition(contract()))
+    expect(text).toContain('remains payable in full')
+    expect(text).toMatch(/put another person in the place of one who does not attend/)
+  })
+
+  it('limits the accompaniment clause to bookings that include the service', () => {
+    const text = allText(buildContractDocDefinition(contract()))
+    expect(text).toMatch(/applies only where the services described in clause 2 expressly include/)
+  })
+
+  it('submits clause 11 to the second signature under Articles 1341 and 1342', () => {
+    expect(allText(buildContractDocDefinition(contract()))).toMatch(/clause 11 \(the fee remaining payable in full/)
+    expect(allText(buildContractDocDefinition(contract({ language: 'it' })))).toMatch(/articolo 11 \(corrispettivo dovuto per intero/)
+  })
+
+  /*
+   * Her current agreement mandates cash with no exception, caps her liability at the
+   * deposit, surcharges PayPal and takes image rights by opt-out. All four were left
+   * out on purpose and flagged for the lawyer; this fails if one is quietly added.
+   */
+  it('carries none of the terms held back for legal advice', () => {
+    for (const language of ['en', 'it'] as const) {
+      const text = allText(buildContractDocDefinition(contract({ language })))
+      expect(text).not.toMatch(/no exceptions|solo liability|only liability|unica responsabilità/i)
+      expect(text).not.toMatch(/PayPal/i)
+      expect(text).not.toMatch(/unless previously discussed|salvo quanto preventivamente concordato/i)
+    }
+  })
+})
