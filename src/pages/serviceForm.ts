@@ -31,6 +31,7 @@ export interface ServiceDraft {
   cancellationTiers: CancellationTierDraft[]
   recallTemplates: RecallTemplateDraft[]
   requiresTrial: boolean
+  requiresPatchTest: boolean
   contractTemplateId: string
   active: boolean
 }
@@ -84,6 +85,7 @@ export function createDefaultServiceDraft(): ServiceDraft {
     ),
     recallTemplates: [],
     requiresTrial: false,
+    requiresPatchTest: false,
     contractTemplateId: 'standard',
     active: true,
   }
@@ -147,6 +149,7 @@ export function serviceToDraft(service: Service): ServiceDraft {
       messageTemplate: recall.messageTemplate,
     })),
     requiresTrial: service.requiresTrial,
+    requiresPatchTest: service.requiresPatchTest ?? false,
     contractTemplateId: service.contractTemplateId,
     active: service.active,
   }
@@ -293,6 +296,7 @@ export function prepareServiceForSave(draft: ServiceDraft): ServiceSaveResult {
       cancellationTiers: normalisedTiers.tiers,
       recallTemplates,
       requiresTrial: draft.requiresTrial,
+      requiresPatchTest: draft.requiresPatchTest,
       contractTemplateId: draft.contractTemplateId.trim(),
       active: draft.active,
     },
@@ -339,6 +343,7 @@ export const SEEDED_SERVICE_INPUTS: CreateInput<Service>[] = [
     cancellationTiers: DEFAULT_CANCELLATION_TIERS.map((tier) => ({ ...tier })),
     recallTemplates: seededRecallTemplates.map((recall) => ({ ...recall })),
     requiresTrial: true,
+    requiresPatchTest: true,
     contractTemplateId: 'standard-bridal',
     active: true,
   },
@@ -351,6 +356,7 @@ export const SEEDED_SERVICE_INPUTS: CreateInput<Service>[] = [
     cancellationTiers: DEFAULT_CANCELLATION_TIERS.map((tier) => ({ ...tier })),
     recallTemplates: seededRecallTemplates.map((recall) => ({ ...recall })),
     requiresTrial: false,
+    requiresPatchTest: false,
     contractTemplateId: 'standard-trial',
     active: true,
   },
@@ -364,6 +370,7 @@ export const SEEDED_SERVICE_INPUTS: CreateInput<Service>[] = [
     cancellationTiers: DEFAULT_CANCELLATION_TIERS.map((tier) => ({ ...tier })),
     recallTemplates: seededRecallTemplates.map((recall) => ({ ...recall })),
     requiresTrial: false,
+    requiresPatchTest: false,
     contractTemplateId: 'standard-event',
     active: true,
   },
@@ -377,6 +384,7 @@ export const SEEDED_SERVICE_INPUTS: CreateInput<Service>[] = [
     cancellationTiers: DEFAULT_CANCELLATION_TIERS.map((tier) => ({ ...tier })),
     recallTemplates: seededRecallTemplates.map((recall) => ({ ...recall })),
     requiresTrial: false,
+    requiresPatchTest: false,
     contractTemplateId: 'standard-editorial',
     active: true,
   },

@@ -3,6 +3,7 @@ import type { BusinessProfile, StampDutyDeadline } from '../types'
 export interface BusinessProfileDraft {
   businessName: string
   registeredAddress: string
+  email: string
   vatNumber: string
   taxCode: string
   regime: BusinessProfile['regime']
@@ -56,6 +57,7 @@ export function createDefaultProfileDraft(
   return {
     businessName: '',
     registeredAddress: '',
+    email: '',
     vatNumber: '',
     taxCode: '',
     regime: 'forfettario',
@@ -233,6 +235,7 @@ export function prepareProfileForSave(draft: BusinessProfileDraft): ProfileSaveR
     profile: {
       businessName: draft.businessName.trim(),
       registeredAddress: draft.registeredAddress.trim(),
+      email: draft.email.trim(),
       vatNumber: draft.vatNumber.trim(),
       taxCode: draft.taxCode.trim().toUpperCase(),
       regime: draft.regime,

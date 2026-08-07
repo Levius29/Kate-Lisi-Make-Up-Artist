@@ -25,6 +25,7 @@ const service: Service = {
     { daysBefore: 14, channel: 'whatsapp', messageTemplate: 'Original text' },
   ],
   requiresTrial: true,
+  requiresPatchTest: true,
   contractTemplateId: 'standard-bridal',
   active: true,
 }

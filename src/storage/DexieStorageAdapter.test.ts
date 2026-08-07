@@ -86,6 +86,7 @@ describe('DexieStorageAdapter', () => {
     const profile: BusinessProfile = {
       businessName: 'Example Studio',
       registeredAddress: 'Via di Esempio 1, Rome, Italy',
+      email: 'studio@example.invalid',
       vatNumber: '12345678901',
       taxCode: 'RSSMRA80A01H501U',
       regime: 'forfettario',
@@ -148,6 +149,7 @@ describe('DexieStorageAdapter', () => {
         },
       ],
       requiresTrial: true,
+      requiresPatchTest: true,
       contractTemplateId: 'standard-bridal',
       active: true,
     })
@@ -169,6 +171,7 @@ describe('DexieStorageAdapter', () => {
       travelFeeFlat: 3_500,
       defaultDepositPercent: 30,
       requiresTrial: true,
+      requiresPatchTest: true,
       contractTemplateId: 'standard-bridal',
       active: true,
     })
@@ -199,6 +202,7 @@ describe('DexieStorageAdapter', () => {
         },
       ],
       requiresTrial: true,
+      requiresPatchTest: true,
       contractTemplateId: 'standard-bridal',
       active: true,
     })
