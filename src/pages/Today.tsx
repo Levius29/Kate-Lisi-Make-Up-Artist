@@ -13,6 +13,8 @@ import {
   updateRecallSentAt,
   type RecallGroups,
 } from '../lib/recalls'
+import { formatEUR } from '../lib/money'
+import { outstandingAppointments, type OutstandingAppointment } from '../lib/payments'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type { Appointment, AppointmentRecall, Client, Service } from '../types'
@@ -95,6 +97,45 @@ function NextAppointment({
         <p className="mt-4 rounded-2xl border border-dashed border-line px-5 py-7 text-sm leading-6 text-muted">
           No upcoming appointment.
         </p>
+      )}
+    </section>
+  )
+}
+
+function UnpaidBalances({
+  items,
+  clientsById,
+  servicesById,
+}: {
+  items: OutstandingAppointment<Appointment>[]
+  clientsById: Map<string, Client>
+  servicesById: Map<string, Service>
+}) {
+  const shown = items.slice(0, 3)
+  return (
+    <section aria-labelledby="unpaid-balances-heading">
+      <header className="flex min-w-0 items-end justify-between gap-3 border-b border-line pb-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Payments</p>
+          <h2 id="unpaid-balances-heading" className="mt-1 font-display text-2xl leading-tight text-ink">Unpaid balances</h2>
+        </div>
+        <span className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full border border-line bg-paper px-2 text-sm font-bold text-accent">{items.length}</span>
+      </header>
+      {shown.length ? (
+        <div className="mt-4 space-y-3">
+          {shown.map(({ appointment, summary, dueAt, overdue }) => (
+            <Link key={appointment.id} to={`/money/${appointment.id}`} className={`flex min-h-16 min-w-0 items-center justify-between gap-3 rounded-2xl border p-4 ${overdue ? 'border-red-900/25 bg-red-50/55' : 'border-line bg-paper/70'}`}>
+              <span className="min-w-0">
+                <span className="block break-words font-display text-lg leading-tight text-ink">{fullClientName(clientsById.get(appointment.clientId))}</span>
+                <span className="mt-1 block break-words text-xs leading-5 text-muted">{servicesById.get(appointment.serviceId)?.name ?? 'Service unavailable'} · {overdue ? 'Overdue since' : 'Due'} {formatFullDate(dueAt)}</span>
+              </span>
+              <strong className="shrink-0 text-sm text-accent">{formatEUR(summary.balance.outstanding)}</strong>
+            </Link>
+          ))}
+          {items.length > shown.length ? <Link to="/money" className="inline-flex min-h-11 items-center text-sm font-bold text-accent">View all {items.length} unpaid balances →</Link> : null}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted">No unpaid balances.</p>
       )}
     </section>
   )
@@ -340,6 +381,10 @@ export function Today() {
       ),
     [appointments, nowIso],
   )
+  const unpaidBalances = useMemo(
+    () => outstandingAppointments(appointments, nowIso).filter(({ summary }) => summary.balance.outstanding > 0),
+    [appointments, nowIso],
+  )
   const unsentCount =
     recallGroups.overdue.length +
     recallGroups.dueToday.length +
@@ -411,6 +456,10 @@ export function Today() {
               : ''
           }
         />
+      </div>
+
+      <div className="mt-12">
+        <UnpaidBalances items={unpaidBalances} clientsById={clientsById} servicesById={servicesById} />
       </div>
 
       <section className="mt-12 min-w-0" aria-labelledby="recalls-heading">

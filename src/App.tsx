@@ -5,6 +5,7 @@ import { IosInstallGate } from './components/IosInstallGate'
 import { Calendar } from './pages/Calendar'
 import { Clients } from './pages/Clients'
 import { Contracts } from './pages/Contracts'
+import { Money } from './pages/Money'
 import { Services } from './pages/Services'
 import { Settings } from './pages/Settings'
 import { Today } from './pages/Today'
@@ -18,7 +19,7 @@ export default function App() {
             <Route index element={<Today />} />
             <Route path="calendar/*" element={<Calendar />} />
             <Route path="clients/*" element={<Clients />} />
-            <Route path="money" element={<p>Not built yet — stage 8</p>} />
+            <Route path="money/*" element={<Money />} />
             <Route path="settings" element={<Settings />} />
             <Route path="services/*" element={<Services />} />
             <Route path="settings/contracts" element={<Contracts />} />

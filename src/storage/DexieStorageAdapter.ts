@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type MetaRecord, type StoredProfile } from '../db/database'
 import type {
   Appointment,
+  AppointmentPayment,
   BusinessProfile,
   Client,
   Contract,
@@ -13,6 +14,7 @@ import type {
 } from '../types'
 import type {
   CreateInput,
+  AppointmentPaymentRepository,
   ImportMode,
   ListOptions,
   MetaRepository,
@@ -156,6 +158,45 @@ class DexieMetaRepository implements MetaRepository {
   }
 }
 
+class DexieAppointmentPaymentRepository implements AppointmentPaymentRepository {
+  add(appointmentId: string, payment: AppointmentPayment): Promise<Appointment> {
+    return db.transaction('rw', db.appointments, async () => {
+      const appointment = await db.appointments.get(appointmentId)
+      if (!appointment) throw new Error(`Appointment not found: ${appointmentId}`)
+      if (!Number.isSafeInteger(payment.amount) || payment.amount <= 0) {
+        throw new Error('Payment amount must be a positive whole number of cents.')
+      }
+
+      const updated = {
+        ...appointment,
+        payments: [...appointment.payments, { ...payment }],
+        updatedAt: now(),
+      }
+      await db.appointments.put(updated)
+      return updated
+    })
+  }
+
+  remove(appointmentId: string, paymentIndex: number): Promise<Appointment> {
+    return db.transaction('rw', db.appointments, async () => {
+      const appointment = await db.appointments.get(appointmentId)
+      if (!appointment) throw new Error(`Appointment not found: ${appointmentId}`)
+      if (
+        !Number.isInteger(paymentIndex) ||
+        paymentIndex < 0 ||
+        paymentIndex >= appointment.payments.length
+      ) {
+        throw new Error(`Payment not found at index: ${paymentIndex}`)
+      }
+
+      const payments = appointment.payments.filter((_, index) => index !== paymentIndex)
+      const updated = { ...appointment, payments, updatedAt: now() }
+      await db.appointments.put(updated)
+      return updated
+    })
+  }
+}
+
 export class DexieStorageAdapter implements StorageAdapter {
   readonly profile: ProfileRepository = new DexieProfileRepository()
   readonly clients: Repository<Client> = new DexieRepository<Client>(db.clients)
@@ -163,6 +204,8 @@ export class DexieStorageAdapter implements StorageAdapter {
   readonly appointments: Repository<Appointment> = new DexieRepository<Appointment>(
     db.appointments,
   )
+  readonly appointmentPayments: AppointmentPaymentRepository =
+    new DexieAppointmentPaymentRepository()
   readonly contracts: Repository<Contract> = new ContractRepository(db.contracts)
   readonly invoices: Repository<Invoice> = new DexieRepository<Invoice>(db.invoices)
   readonly meta: MetaRepository = new DexieMetaRepository()

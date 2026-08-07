@@ -1,5 +1,6 @@
 import type {
   Appointment,
+  AppointmentPayment,
   BusinessProfile,
   Client,
   Contract,
@@ -31,6 +32,11 @@ export interface Repository<T extends EntityMetadata> {
 export interface ProfileRepository {
   get(): Promise<BusinessProfile | undefined>
   save(profile: BusinessProfile): Promise<BusinessProfile>
+}
+
+export interface AppointmentPaymentRepository {
+  add(appointmentId: string, payment: AppointmentPayment): Promise<Appointment>
+  remove(appointmentId: string, paymentIndex: number): Promise<Appointment>
 }
 
 export type StorageValue =
@@ -65,6 +71,7 @@ export interface StorageAdapter {
   clients: Repository<Client>
   services: Repository<Service>
   appointments: Repository<Appointment>
+  appointmentPayments: AppointmentPaymentRepository
   contracts: Repository<Contract>
   invoices: Repository<Invoice>
   meta: MetaRepository

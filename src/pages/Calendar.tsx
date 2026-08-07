@@ -13,7 +13,7 @@ import {
   subWeeks,
 } from 'date-fns'
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
 import { SelectInput } from '../components/ui/SelectInput'
@@ -33,6 +33,7 @@ import {
   formatTimeWithZone,
 } from '../lib/dates'
 import { formatEUR } from '../lib/money'
+import { calculatePaymentSummary } from '../lib/payments'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type {
@@ -798,8 +799,7 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
   onEdit: () => void
   onOpenLinked: (appointment: Appointment) => void
 }) {
-  const paid = appointment.payments.reduce((sum, payment) => sum + payment.amount, 0)
-  const owed = Math.max(0, appointment.total - paid)
+  const paymentSummary = calculatePaymentSummary(appointment)
   const directionsQuery = appointment.locationAddress || appointment.locationName
   return (
     <article className="min-w-0">
@@ -825,8 +825,8 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
         <DetailRow label="People">{appointment.peopleCount}</DetailRow>
         {appointment.ceremonyTime ? <DetailRow label="Ceremony">{formatFullDateTimeWithZone(appointment.ceremonyTime)}</DetailRow> : null}
         <DetailRow label="Booking total">{formatEUR(appointment.total)}</DetailRow>
-        <DetailRow label="Deposit">{appointment.depositPercent}% · {formatEUR(appointment.depositAmount)}</DetailRow>
-        <DetailRow label="Money owed"><strong className="text-base">{formatEUR(owed)}</strong></DetailRow>
+        <DetailRow label="Deposit">{appointment.depositPercent}% · {formatEUR(paymentSummary.deposit.paid)} paid of {formatEUR(paymentSummary.deposit.due)}</DetailRow>
+        <DetailRow label="Balance">{formatEUR(paymentSummary.balance.paid)} paid · <strong className="text-base">{formatEUR(paymentSummary.balance.outstanding)} due</strong></DetailRow>
         <DetailRow label="Balance due">{formatFullDate(appointment.balanceDueAt ?? appointment.startAt)}</DetailRow>
       </dl>
 
@@ -842,8 +842,9 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
         </section>
       ) : null}
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
         <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(directionsQuery)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-accent px-3 text-center text-sm font-bold text-accent">Directions</a>
+        <Link to={`/money/${appointment.id}`} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-accent px-3 text-center text-sm font-bold text-accent">Manage payments</Link>
         <button type="button" onClick={onEdit} className="min-h-12 rounded-xl bg-accent px-3 text-sm font-bold text-paper">Edit appointment</button>
       </div>
 

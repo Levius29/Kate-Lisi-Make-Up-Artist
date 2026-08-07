@@ -269,4 +269,66 @@ describe('DexieStorageAdapter', () => {
       },
     ])
   })
+
+  it('adds and removes appointment payments through the storage adapter', async () => {
+    const appointment = await adapter.appointments.create({
+      clientId: 'client-payment-test',
+      serviceId: 'service-payment-test',
+      status: 'confirmed',
+      startAt: '2030-09-14T08:00:00.000Z',
+      endAt: '2030-09-14T10:00:00.000Z',
+      locationName: 'Sample venue',
+      locationAddress: 'Example address, Rome',
+      peopleCount: 1,
+      lineItems: [{ label: 'Bridal make-up', quantity: 1, unitPrice: 50_000 }],
+      subtotal: 50_000,
+      total: 50_000,
+      depositPercent: 30,
+      depositAmount: 15_000,
+      payments: [],
+      cancellationCutoffs: [],
+      balanceDueAt: '2030-09-13T22:00:00.000Z',
+      recalls: [],
+      internalNotes: '',
+    })
+
+    await adapter.appointmentPayments.add(appointment.id, {
+      type: 'deposit',
+      amount: 15_000,
+      method: 'wise',
+      paidAt: '2030-05-01T10:00:00.000Z',
+    })
+    await adapter.appointmentPayments.add(appointment.id, {
+      type: 'balance',
+      amount: 10_000,
+      method: 'bank_transfer',
+      paidAt: '2030-08-01T10:00:00.000Z',
+    })
+
+    expect((await adapter.appointments.get(appointment.id))?.payments).toEqual([
+      {
+        type: 'deposit',
+        amount: 15_000,
+        method: 'wise',
+        paidAt: '2030-05-01T10:00:00.000Z',
+      },
+      {
+        type: 'balance',
+        amount: 10_000,
+        method: 'bank_transfer',
+        paidAt: '2030-08-01T10:00:00.000Z',
+      },
+    ])
+
+    await adapter.appointmentPayments.remove(appointment.id, 0)
+
+    expect((await adapter.appointments.get(appointment.id))?.payments).toEqual([
+      {
+        type: 'balance',
+        amount: 10_000,
+        method: 'bank_transfer',
+        paidAt: '2030-08-01T10:00:00.000Z',
+      },
+    ])
+  })
 })

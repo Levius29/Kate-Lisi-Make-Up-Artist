@@ -4,6 +4,7 @@ export const storage = new DexieStorageAdapter()
 
 export type {
   CreateInput,
+  AppointmentPaymentRepository,
   ImportMode,
   ListOptions,
   Repository,
