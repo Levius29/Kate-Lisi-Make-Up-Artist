@@ -220,7 +220,7 @@ export function Timeline() {
           <Field>
             <FieldLabel htmlFor="timeline-travel" required>Travel time (minutes)</FieldLabel>
             <TextInput id="timeline-travel" type="number" inputMode="numeric" min="0" max="480" step="1" value={draft.travelMinutes} onChange={(event) => update('travelMinutes', event.target.value)} required />
-            <HelperText>The artist arrives this many minutes before make-up starts.</HelperText>
+            <HelperText>How long the journey takes. She leaves this many minutes before she arrives.</HelperText>
           </Field>
         </div>
         {error ? <ErrorText className="mt-5 rounded-xl border border-red-800/25 bg-red-50 p-3">{error}</ErrorText> : null}
@@ -234,8 +234,11 @@ export function Timeline() {
           <p className="mt-2 text-sm font-semibold text-muted">{formatFullDate(timeline.ceremonyAt)}</p>
 
           <div className="mt-5 rounded-2xl bg-accent px-4 py-5 text-paper sm:px-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/75">Artist arrival</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-paper/75">Arrives at the venue</p>
             <p className="mt-1 font-display text-3xl leading-tight">{formatTimeWithZone(timeline.arrivalAt)}</p>
+            <p className="mt-2 text-sm text-paper/80">
+              Leave by {formatTimeWithZone(timeline.departAt)} — {timeline.travelMinutes} minutes travel
+            </p>
           </div>
 
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">

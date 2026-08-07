@@ -13,7 +13,15 @@ describe('calculateBridalTimeline', () => {
       travelMinutes: 45,
     })
 
-    expect(formatTime(result.arrivalAt)).toBe('10:45')
+    /*
+     * She leaves at 10:45, travels 45 minutes, and arrives at 11:30 — which is
+     * when the first face starts. The planner's PDF headlines the arrival, so
+     * these must not be conflated: labelling the departure "arrival" would have
+     * the venue expecting her three quarters of an hour early.
+     */
+    expect(formatTime(result.departAt)).toBe('10:45')
+    expect(formatTime(result.arrivalAt)).toBe('11:30')
+    expect(result.arrivalAt).toBe(result.startAt)
     expect(formatTime(result.startAt)).toBe('11:30')
     expect(result.slots.map((slot) => [slot.label, formatTime(slot.startsAt), formatTime(slot.endsAt)])).toEqual([
       ['Person 1', '11:30', '12:15'],

@@ -17,6 +17,12 @@ export interface BridalTimelineSlot {
 
 export interface BridalTimeline {
   ceremonyAt: string
+  /**
+   * When she must leave, travel time before reaching the venue. This is for her,
+   * not the planner — do not label it "arrival".
+   */
+  departAt: string
+  /** When she reaches the venue and begins: the same instant as startAt. */
   arrivalAt: string
   startAt: string
   bufferMinutes: number
@@ -80,12 +86,19 @@ export function calculateBridalTimeline(input: BridalTimelineInput): BridalTimel
 
   const workMinutes = input.people * input.minutesPerPerson
   const startAt = subtractMinutes(input.ceremonyAt, workMinutes + input.bufferMinutes)
-  const arrivalAt = subtractMinutes(startAt, input.travelMinutes)
+  /*
+   * Travel time is subtracted to find when she LEAVES. She arrives at the venue
+   * when the first face starts. Calling the departure "arrival" would tell a
+   * planner to expect her a full travel-time early, which on a wedding morning
+   * is a real scheduling error.
+   */
+  const departAt = subtractMinutes(startAt, input.travelMinutes)
+  const arrivalAt = startAt
 
-  if (romeDateKey(arrivalAt) !== romeDateKey(input.ceremonyAt)) {
+  if (romeDateKey(departAt) !== romeDateKey(input.ceremonyAt)) {
     throw new TimelineCalculationError(
       'previous_day',
-      'This plan would require arrival on the previous day. Choose a later ceremony time or reduce the durations.',
+      'This plan would require setting off on the previous day. Choose a later ceremony time or reduce the durations.',
     )
   }
 
@@ -105,6 +118,7 @@ export function calculateBridalTimeline(input: BridalTimelineInput): BridalTimel
 
   return {
     ceremonyAt: input.ceremonyAt,
+    departAt,
     arrivalAt,
     startAt,
     bufferMinutes: input.bufferMinutes,

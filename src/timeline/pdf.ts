@@ -26,14 +26,16 @@ export function buildTimelineDocDefinition(
       { text: formatFullDate(timeline.ceremonyAt), style: 'date' },
       {
         stack: [
-          { text: 'ARTIST ARRIVAL', style: 'arrivalLabel' },
+          { text: 'ARTIST ARRIVES AT THE VENUE', style: 'arrivalLabel' },
           { text: formatTimeWithZone(timeline.arrivalAt), style: 'arrival' },
         ],
         style: 'arrivalBox',
       },
       {
+        // The planner needs the arrival; the departure is hers. Keeping them
+        // distinct avoids promising the venue an arrival a travel-time early.
         columns: [
-          { text: `Make-up starts\n${formatTimeWithZone(timeline.startAt)}`, style: 'summary' },
+          { text: `Leave by\n${formatTimeWithZone(timeline.departAt)}`, style: 'summary' },
           { text: `Ceremony\n${formatTimeWithZone(timeline.ceremonyAt)}`, style: 'summary' },
         ],
         columnGap: 12,
