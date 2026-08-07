@@ -364,32 +364,67 @@ export function buildContractDocDefinition(contract: Contract): Record<string, u
       style: 'footer',
       margin: [50, 16, 50, 0],
     }),
-    defaultStyle: { font: 'Roboto', fontSize: 10, lineHeight: 1.3 },
+    /*
+     * Times, not Roboto. A grotesque set in bold capitals reads as a demand;
+     * a book serif reads as a document, which is what a client is being asked
+     * to sign. Times is one of the PDF base-14 faces that pdfmake ships as a
+     * font container, so it costs only metrics — no embedded glyphs, and it
+     * still renders with no network.
+     *
+     * Everything else is softened to match: warm near-black instead of pure
+     * black, headings carried by a muted accent and letter-spacing rather than
+     * heavy bold, and more air between lines.
+     */
+    defaultStyle: { font: 'Times', fontSize: 10.5, lineHeight: 1.4, color: '#332e2b' },
     styles: {
-      title: { fontSize: 16, bold: true, alignment: 'center', margin: [0, 0, 0, 4] },
-      subtitle: { fontSize: 10, alignment: 'center', color: '#555', margin: [0, 0, 0, 16] },
-      clauseHeading: { fontSize: 11, bold: true, margin: [0, 12, 0, 5] },
-      clause: { fontSize: 10, alignment: 'justify', margin: [0, 0, 0, 5] },
-      th: { fontSize: 9, bold: true, margin: [0, 4, 0, 4] },
-      td: { fontSize: 9, margin: [0, 4, 0, 4] },
-      tdStrong: { fontSize: 9, bold: true, margin: [0, 4, 0, 4] },
-      footer: { fontSize: 8, color: '#666', alignment: 'center' },
-      sigLabel: { fontSize: 9, color: '#333' },
+      title: { fontSize: 17, alignment: 'center', characterSpacing: 0.6, margin: [0, 0, 0, 5] },
+      subtitle: { fontSize: 10, alignment: 'center', color: '#7a6f6a', margin: [0, 0, 0, 20] },
+      clauseHeading: {
+        fontSize: 10.5,
+        bold: true,
+        color: '#6d564f',
+        characterSpacing: 0.3,
+        margin: [0, 15, 0, 6],
+      },
+      clause: { fontSize: 10.5, alignment: 'justify', margin: [0, 0, 0, 6] },
+      th: { fontSize: 9.5, bold: true, color: '#6d564f', margin: [0, 5, 0, 5] },
+      td: { fontSize: 9.5, margin: [0, 5, 0, 5] },
+      tdStrong: { fontSize: 9.5, bold: true, margin: [0, 5, 0, 5] },
+      footer: { fontSize: 8, color: '#8a807c', alignment: 'center' },
+      sigLabel: { fontSize: 9, color: '#5c534f' },
     },
   }
 }
 
+/*
+ * The rule is a table bottom-border at width '*', not a fixed-width canvas line.
+ * A canvas cannot be given a percentage, so a hard 200pt line overflowed its
+ * column as soon as there were three signatures: 3 × 200pt plus gaps is 648pt
+ * against 495pt of usable A4, and the last line ran off the page edge. Found on
+ * a real device, invisible to a test that only reads the document's text.
+ */
 function signatureRow(placeAndDate: string, ...names: string[]) {
   const line = (label: string) => ({
     stack: [
-      { text: '', margin: [0, 18, 0, 0] },
-      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 0.7 }] },
-      { text: label, style: 'sigLabel', margin: [0, 4, 0, 0] },
+      { text: '', margin: [0, 16, 0, 0] },
+      {
+        table: { widths: ['*'], body: [[{ text: '', border: [false, false, false, true] }]] },
+        layout: {
+          hLineWidth: (i: number) => (i === 1 ? 0.7 : 0),
+          vLineWidth: () => 0,
+          hLineColor: () => '#8a807c',
+          paddingTop: () => 0,
+          paddingBottom: () => 0,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+        },
+      },
+      { text: label, style: 'sigLabel', margin: [0, 5, 0, 0] },
     ],
   })
   return {
     columns: [line(placeAndDate), ...names.map((n) => line(n))],
-    columnGap: 24,
+    columnGap: 20,
     margin: [0, 8, 0, 4],
   }
 }
@@ -403,12 +438,15 @@ function signatureRow(placeAndDate: string, ...names: string[]) {
  * chunk, which is why stage 1 raised workbox's 2 MiB file limit.
  */
 async function loadPdfMake(): Promise<{ createPdf: (d: unknown) => { getBlob: (cb: (b: Blob) => void) => void } }> {
-  const [pdfMakeModule, vfsModule] = await Promise.all([
+  const [pdfMakeModule, vfsModule, timesModule] = await Promise.all([
     import('pdfmake/build/pdfmake'),
     import('pdfmake/build/vfs_fonts'),
+    // Base-14 Times: metrics only, no glyph payload, still works offline.
+    import('pdfmake/build/standard-fonts/Times'),
   ])
   const pdfMake = ((pdfMakeModule as Record<string, unknown>).default ?? pdfMakeModule) as {
     addVirtualFileSystem?: (vfs: unknown) => void
+    addFontContainer?: (container: unknown) => void
     vfs?: unknown
     createPdf: (d: unknown) => { getBlob: (cb: (b: Blob) => void) => void }
   }
@@ -418,6 +456,9 @@ async function loadPdfMake(): Promise<{ createPdf: (d: unknown) => { getBlob: (c
 
   if (typeof pdfMake.addVirtualFileSystem === 'function') pdfMake.addVirtualFileSystem(vfs)
   else pdfMake.vfs = vfs
+
+  const times = (timesModule as Record<string, unknown>).default ?? timesModule
+  if (typeof pdfMake.addFontContainer === 'function') pdfMake.addFontContainer(times)
 
   return pdfMake
 }
