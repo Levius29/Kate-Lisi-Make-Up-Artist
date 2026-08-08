@@ -3,6 +3,7 @@
 // Chromium is not Safari — this checks layout and behaviour, not WebKit quirks.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
+import { resolveDataRoutes, warnIfNoData } from './routes.mjs';
 
 const BASE = process.env.APP_URL || 'http://localhost:4173/Kate-Lisi-Make-Up-Artist/';
 const OUT = process.env.SHOT_DIR || './shots';
@@ -31,6 +32,38 @@ const DEFAULT_ROUTES = [
   '#/settings', '#/services', '#/backup', '#/timeline', '#/settings/contracts',
 ];
 const ROUTES = process.env.ROUTES ? process.env.ROUTES.split(',') : DEFAULT_ROUTES;
+const USER_DIR = process.env.USER_DIR;
+
+/*
+ * A context that carries the seeded profile when one is offered. Without it every route in the
+ * list renders an empty state, which is the easy case and the one that hid a real defect: the
+ * appointment detail had never been opened by any check in this harness.
+ */
+async function openContext(viewport) {
+  const options = {
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: 2,
+    isMobile: viewport.width < 1024,
+    hasTouch: true,
+  };
+  if (!USER_DIR) return browser.newContext(options);
+  return chromium.launchPersistentContext(USER_DIR, {
+    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    args: ['--no-sandbox'],
+    ...options,
+  });
+}
+
+/* Offline-first: an unclear cache makes a run measure a bundle from an earlier build. */
+async function dropServiceWorker(page) {
+  await page.evaluate(async () => {
+    for (const key of await caches.keys()) await caches.delete(key);
+    for (const registration of await navigator.serviceWorker.getRegistrations()) {
+      await registration.unregister();
+    }
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+}
 
 const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -40,19 +73,28 @@ const browser = await chromium.launch({
 let failures = 0;
 const report = [];
 
+// Resolve the data-dependent routes once, before the matrix runs.
+let dataRoutes = [];
+{
+  const ctx = await openContext(VIEWPORTS[0]);
+  const page = ctx.pages()[0] || (await ctx.newPage());
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await dropServiceWorker(page);
+  ({ routes: dataRoutes } = await resolveDataRoutes(page));
+  await ctx.close();
+}
+const noData = warnIfNoData(dataRoutes, USER_DIR);
+const ALL_ROUTES = [...ROUTES, ...dataRoutes];
+if (dataRoutes.length) console.log(`checking ${dataRoutes.length} data-dependent routes as well\n`);
+
 for (const vp of VIEWPORTS) {
-  const ctx = await browser.newContext({
-    viewport: { width: vp.width, height: vp.height },
-    deviceScaleFactor: 2,
-    isMobile: vp.width < 1024,
-    hasTouch: true,
-  });
-  const page = await ctx.newPage();
+  const ctx = await openContext(vp);
+  const page = ctx.pages()[0] || (await ctx.newPage());
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
-  for (const route of ROUTES) {
+  for (const route of ALL_ROUTES) {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
     /*
      * Wait for the route's own content, not a fixed delay. Routes are React.lazy chunks and a
@@ -147,6 +189,7 @@ for (const vp of VIEWPORTS) {
 }
 
 await browser.close();
+if (noData) console.log('COVERAGE INCOMPLETE — data routes were not checked.');
 
 for (const r of report) {
   console.log(`${r.ok ? 'PASS' : 'FAIL'}  ${r.viewport.padEnd(28)} ${r.route}`);
