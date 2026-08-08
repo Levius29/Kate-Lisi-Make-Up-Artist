@@ -1,10 +1,35 @@
+import { execFileSync } from 'node:child_process'
+
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+function resolveBuildCommit(): string {
+  // CI exposes the exact revision; local builds fall back to the checked-out
+  // commit. The build date beside it deliberately distinguishes local bundles
+  // made from different uncommitted working states.
+  const ciCommit = process.env.GITHUB_SHA?.trim()
+  if (ciCommit) return ciCommit.slice(0, 12)
+
+  try {
+    return execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {
+      encoding: 'utf8',
+    }).trim()
+  } catch {
+    return 'unknown'
+  }
+}
+
+const buildCommit = resolveBuildCommit()
+const buildDate = new Date().toISOString()
+
 export default defineConfig({
   base: '/Kate-Lisi-Make-Up-Artist/',
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(buildCommit),
+    __BUILD_DATE__: JSON.stringify(buildDate),
+  },
   plugins: [
     react(),
     tailwindcss(),

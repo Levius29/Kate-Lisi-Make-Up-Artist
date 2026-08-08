@@ -63,8 +63,6 @@ body {
   background: var(--color-canvas);
   /* The page never scrolls sideways; wide content scrolls inside its own box. */
   overflow-x: hidden;
-  /* Stops the installed app rubber-banding as a whole on iOS. */
-  overscroll-behavior-y: contain;
 }
 
 /*
@@ -145,26 +143,39 @@ body {
  *
  * Every effect here happens AFTER the thing it acknowledges. Nothing delays a tap, nothing
  * moves on its own, nothing repeats. She uses this standing up in a villa with a bride waiting;
- * an interface that performs is an interface that wastes her time. The blanket
- * prefers-reduced-motion rule further down switches all of it off.
+ * an interface that performs is an interface that wastes her time. Settings owns the single
+ * root switch; the operating-system media query deliberately does not participate.
  */
-button,
-a[href] {
+:root[data-motion='on'] button,
+:root[data-motion='on'] a[href] {
   transition:
-    transform 120ms ease-out,
     background-color 150ms ease-out,
     border-color 150ms ease-out,
     color 150ms ease-out;
 }
 
-/* The surface gives very slightly under the finger — iOS has no hover to fall back on. */
+/*
+ * A colour response remains visible on iOS without transforming/promoting the
+ * large surface under a drag. Dark filled controls use a darker neighbour so
+ * their paper text keeps its contrast while pressed.
+ */
 button:not(:disabled):active,
 a[href]:active {
-  transform: scale(0.985);
+  background-color: var(--color-accent-soft);
+}
+
+button.bg-accent:not(:disabled):active,
+a[href].bg-accent:active {
+  background-color: var(--color-ink);
+}
+
+button.bg-ink:not(:disabled):active,
+a[href].bg-ink:active {
+  background-color: var(--color-accent);
 }
 
 /* A panel that has just opened settles in rather than snapping into existence. */
-.panel-enter {
+:root[data-motion='on'] .panel-enter {
   animation: panel-enter 180ms ease-out;
 }
 
@@ -179,7 +190,7 @@ a[href]:active {
  * Marks a row that just changed — a recall sent, a payment recorded. It fades out by itself and
  * never repeats, so it confirms an action without becoming something that blinks at her.
  */
-.just-changed {
+:root[data-motion='on'] .just-changed {
   animation: just-changed 1100ms ease-out;
 }
 
@@ -239,13 +250,10 @@ label:has(> input[type='radio']) {
   min-height: 44px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }

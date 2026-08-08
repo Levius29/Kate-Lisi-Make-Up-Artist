@@ -109,9 +109,12 @@ const appointments = [
   makeAppointment('appointment-three', 'client-one', 'service-one', '10', []),
 ]
 
-function renderCalendar(): string {
+function renderCalendar(
+  pathname = '/calendar',
+  appointmentData: Appointment[] = appointments,
+): string {
   vi.spyOn(storage, 'live').mockReturnValue({
-    appointments,
+    appointments: appointmentData,
     clients,
     services,
     contracts: [],
@@ -119,7 +122,7 @@ function renderCalendar(): string {
   })
 
   return renderToStaticMarkup(
-    <MemoryRouter initialEntries={['/calendar']}>
+    <MemoryRouter initialEntries={[pathname]}>
       <Routes>
         <Route path="calendar/*" element={<Calendar />} />
       </Routes>
@@ -197,5 +200,37 @@ describe('calendar day summaries', () => {
     expect(agenda).toContain('Open email')
     expect(agenda).toContain('Mark as sent')
     expect(agenda).toContain('View appointment')
+  })
+})
+
+describe('routed appointment detail', () => {
+  it('renders the phone detail as a normal-flow page without a modal backdrop or fixed sheet', () => {
+    const markup = renderCalendar('/calendar/appointment-one')
+
+    expect(markup).toContain('data-appointment-detail-page="true"')
+    expect(markup).not.toContain('Close appointment detail backdrop')
+    expect(markup).not.toMatch(/data-appointment-detail-page="true"[^>]*class="[^"]*fixed/)
+  })
+
+  it('offers WhatsApp, email, mark-sent, and undo actions for its own recalls', () => {
+    const appointmentData = appointments.map((appointment) =>
+      appointment.id === 'appointment-one'
+        ? {
+            ...appointment,
+            recalls: appointment.recalls.map((recall) =>
+              recall.id === 'recall-two'
+                ? { ...recall, sentAt: '2026-08-08T09:00:00.000Z' }
+                : recall,
+            ),
+          }
+        : appointment,
+    )
+    const markup = renderCalendar('/calendar/appointment-one', appointmentData)
+    const recalls = markup.slice(markup.indexOf('Appointment recalls'))
+
+    expect(recalls).toContain('Open WhatsApp')
+    expect(recalls).toContain('Open email')
+    expect(recalls).toContain('Mark as sent')
+    expect(recalls).toContain('Undo')
   })
 })

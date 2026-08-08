@@ -448,31 +448,37 @@ export function Money() {
 
   return (
     <div className="min-w-0">
-      <PageHeader
-        eyebrow="Studio"
-        title="Money"
-        subtitle="What has arrived, what remains, and the annual threshold."
-        tone="muted"
-        spacing="none"
-      />
+      <div className={selected ? 'hidden lg:block' : undefined}>
+        <PageHeader
+          eyebrow="Studio"
+          title="Money"
+          subtitle="What has arrived, what remains, and the annual threshold."
+          tone="muted"
+          spacing="none"
+        />
 
-      <RevenueMeter appointments={appointments} profile={data.profile} invoices={data.invoices} nowIso={nowIso} />
+        <RevenueMeter appointments={appointments} profile={data.profile} invoices={data.invoices} nowIso={nowIso} />
 
-      <InvoicePanel
-        appointments={visibleAppointments}
-        clientsById={clientsById}
-        invoices={data.invoices}
-        profile={data.profile}
-      />
+        <InvoicePanel
+          appointments={visibleAppointments}
+          clientsById={clientsById}
+          invoices={data.invoices}
+          profile={data.profile}
+        />
+      </div>
 
-      <div className="mt-10 min-w-0 lg:grid lg:grid-cols-[minmax(20rem,0.95fr)_minmax(20rem,1.05fr)] lg:items-start lg:gap-6">
-        <div className="min-w-0 space-y-10">
+      <div className={`${selected ? '' : 'mt-10'} min-w-0 lg:mt-10 lg:grid lg:grid-cols-[minmax(20rem,0.95fr)_minmax(20rem,1.05fr)] lg:items-start lg:gap-6`}>
+        <div className={`min-w-0 space-y-10 ${selected ? 'hidden lg:block' : ''}`}>
           <BookingList title="Overdue balances" eyebrow="Needs attention" empty="Nothing overdue." items={overdue} clientsById={clientsById} servicesById={servicesById} selectedId={selectedId} onSelect={(appointment) => navigate(`/money/${appointment.id}`)} />
           <BookingList title="Outstanding" eyebrow="Soonest first" empty="No outstanding booking payments." items={upcoming} clientsById={clientsById} servicesById={servicesById} selectedId={selectedId} onSelect={(appointment) => navigate(`/money/${appointment.id}`)} />
         </div>
 
-        {selected ? <button type="button" onClick={() => navigate('/money')} className="fixed inset-0 z-40 bg-ink/25 lg:hidden" aria-label="Close payment detail backdrop" /> : null}
-        <aside className={`${selected ? 'fixed inset-x-0 bottom-0 z-50 max-h-[calc(100dvh-env(safe-area-inset-top))] overflow-y-auto rounded-t-3xl border-t border-line bg-paper pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-[calc(1.25rem+env(safe-area-inset-left))] pr-[calc(1.25rem+env(safe-area-inset-right))] pt-5 shadow-2xl' : 'hidden'} lg:sticky lg:top-6 lg:z-auto lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:rounded-3xl lg:border lg:border-line lg:bg-paper/75 lg:p-5 lg:shadow-none`}>
+        <aside
+          data-payment-detail-page={selected ? 'true' : undefined}
+          className={selected
+            ? 'min-w-0 rounded-3xl border border-line bg-paper pb-[calc(1rem+env(safe-area-inset-bottom))] pl-4 pr-4 pt-5 sm:pl-5 sm:pr-5 lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:bg-paper/75 lg:p-5'
+            : 'hidden lg:sticky lg:top-6 lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:rounded-3xl lg:border lg:border-line lg:bg-paper/75 lg:p-5'}
+        >
           {selected ? (
             <PaymentDetail appointment={selected} client={clientsById.get(selected.clientId)} service={servicesById.get(selected.serviceId)} onClose={() => navigate('/money')} />
           ) : (

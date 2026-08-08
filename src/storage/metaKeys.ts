@@ -5,4 +5,5 @@ export const META_KEYS = {
   persistenceGrantedAt: 'storage-persistence-granted-at',
   lastBackupAt: 'last-backup-at',
   backupReminderDismissedAt: 'backup-reminder-dismissed-at',
+  motionEnabled: 'motion-enabled',
 } as const

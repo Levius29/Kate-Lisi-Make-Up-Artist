@@ -2,6 +2,7 @@ import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { BackupReminder } from './BackupReminder'
+import { MotionPreferenceController } from './MotionSetting'
 import { NavigationIcon, type NavigationIconName } from './NavigationIcon'
 import { ServiceWorkerUpdatePrompt } from './ServiceWorkerUpdatePrompt'
 
@@ -77,6 +78,7 @@ export function AppShell({
 
   return (
     <div className="app-shell grid grid-rows-[minmax(0,1fr)_auto_auto] overflow-hidden bg-canvas text-ink lg:grid-cols-[16rem_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)_auto]">
+      <MotionPreferenceController />
       <nav
         aria-label="Primary"
         className="hidden lg:sticky lg:top-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line lg:bg-paper lg:py-10 lg:pl-[calc(1.25rem+env(safe-area-inset-left))] lg:pr-5"

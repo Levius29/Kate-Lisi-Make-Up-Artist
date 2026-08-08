@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { BUILD_MARKER } from '../buildInfo'
 import { BackupStatusLine } from '../components/BackupReminder'
+import { MotionSetting } from '../components/MotionSetting'
 import {
   ErrorText,
   Field,
@@ -335,6 +337,8 @@ export function Settings() {
           </Link>
         </div>
       </section>
+
+      <MotionSetting />
 
       <form className="space-y-6 md:space-y-8" noValidate onSubmit={handleSubmit}>
         <FormSection
@@ -732,6 +736,10 @@ export function Settings() {
           </button>
         </div>
       </form>
+
+      <p className="pb-[env(safe-area-inset-bottom)] pt-8 text-center text-xs leading-5 text-muted">
+        {BUILD_MARKER}
+      </p>
     </div>
   )
 }

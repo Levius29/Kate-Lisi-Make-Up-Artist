@@ -60,7 +60,14 @@ for (const route of ROUTES) {
         // A hidden child cannot make its parent overflow, so it must not disqualify the parent
         // either — the weekday heading always carries one hidden span and one visible one.
         if (display === 'none') return true;
-        return display === 'inline' || display === 'inline-block' || display === 'contents';
+        /*
+         * `display: contents` is transparent: the box is gone and its children lay out against
+         * the grandparent. So look THROUGH it. Treating it as inline reported the calendar page
+         * wrapper as clipped at 320-352px, where the only overflow is the month grid
+         * deliberately bleeding 24px into the page gutter to fit seven 44px columns.
+         */
+        if (display === 'contents') return inlineOnly(child);
+        return display === 'inline' || display === 'inline-block';
       });
 
       const clipped = [...document.querySelectorAll('main *')]

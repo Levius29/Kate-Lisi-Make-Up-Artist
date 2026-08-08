@@ -33,11 +33,13 @@ import {
   romeDateKeyToUtc,
 } from '../lib/appointmentSchedule'
 import {
+  formatClientLocalTime,
   formatFullDate,
   formatFullDateTimeWithZone,
   formatFullDateWithWeekday,
   formatTime,
   formatTimeWithZone,
+  isOutsideCourtesyHours,
 } from '../lib/dates'
 import { formatEUR } from '../lib/money'
 import { calculatePaymentSummary } from '../lib/payments'
@@ -935,6 +937,12 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
         <DetailRow label="Balance due">{formatFullDate(appointment.balanceDueAt ?? appointment.startAt)}</DetailRow>
       </dl>
 
+      <AppointmentRecalls
+        appointment={appointment}
+        client={client}
+        serviceName={service?.name ?? 'Service unavailable'}
+      />
+
       {appointment.ceremonyTime ? (
         <section className="mt-5 rounded-2xl border border-accent bg-canvas p-4">
           <h3 className="font-display text-xl text-ink">Bridal timeline</h3>
@@ -970,6 +978,140 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
         </section>
       ) : null}
     </article>
+  )
+}
+
+function AppointmentRecalls({ appointment, client, serviceName }: {
+  appointment: Appointment
+  client: Client | undefined
+  serviceName: string
+}) {
+  const [nowIso, setNowIso] = useState(() => new Date().toISOString())
+  const [busyId, setBusyId] = useState<string>()
+  const [actionError, setActionError] = useState('')
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowIso(new Date().toISOString()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  async function setSentAt(recall: AppointmentRecall, sentAt: string | undefined) {
+    setBusyId(recall.id)
+    setActionError('')
+    try {
+      const latest = await storage.appointments.get(appointment.id)
+      if (!latest) throw new Error('Appointment not found')
+      await storage.appointments.put(updateRecallSentAt(latest, recall.id, sentAt))
+    } catch {
+      setActionError(
+        sentAt
+          ? 'The recall could not be marked as sent. Try again.'
+          : 'Undo could not be saved. The recall remains marked as sent.',
+      )
+    } finally {
+      setBusyId(undefined)
+    }
+  }
+
+  const sortedRecalls = [...appointment.recalls].sort((left, right) =>
+    left.dueAt.localeCompare(right.dueAt),
+  )
+
+  return (
+    <section className="mt-5 rounded-2xl border border-line bg-canvas p-4 sm:p-5" aria-labelledby="appointment-recalls-heading">
+      <h3 id="appointment-recalls-heading" className="font-display text-2xl text-ink">
+        Appointment recalls
+      </h3>
+      <p className="mt-1 text-sm leading-6 text-muted">
+        Nothing sends automatically. Open the prepared message, then record what you sent.
+      </p>
+
+      {sortedRecalls.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {sortedRecalls.map((recall) => {
+            const link = client
+              ? buildRecallLink({ appointment, client, serviceName, recall, nowIso })
+              : undefined
+            const channel = recall.channel === 'whatsapp' ? 'WhatsApp' : 'Email'
+            const outsideCourtesyHours = client
+              ? isOutsideCourtesyHours(nowIso, client.timezone)
+              : false
+
+            return (
+              <article key={recall.id} className="rounded-2xl border border-line bg-paper/80 p-4">
+                <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-ink">{channel} recall</h4>
+                    <p className="mt-1 text-sm leading-5 text-muted">Due {formatFullDate(recall.dueAt)}</p>
+                  </div>
+                  <p className="shrink-0 text-right text-xs leading-5 text-muted">
+                    Client time<br />
+                    <strong className="text-sm text-ink">
+                      {client ? formatClientLocalTime(nowIso, client.timezone) : 'Unavailable'}
+                    </strong>
+                  </p>
+                </div>
+
+                {outsideCourtesyHours ? (
+                  <p className="mt-3 rounded-xl border border-warning-line bg-warning-surface px-3 py-2 text-xs font-bold leading-5 text-warning-text">
+                    Outside 09:00–20:00 — send only if appropriate
+                  </p>
+                ) : null}
+
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  {link ? (
+                    <a
+                      href={link}
+                      target={recall.channel === 'whatsapp' ? '_blank' : undefined}
+                      rel={recall.channel === 'whatsapp' ? 'noreferrer' : undefined}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-3 text-sm font-bold text-paper"
+                    >
+                      {recall.channel === 'whatsapp' ? 'Open WhatsApp' : 'Open email'}
+                    </a>
+                  ) : (
+                    <span className="flex min-h-11 items-center justify-center rounded-xl border border-line px-3 text-center text-sm font-bold text-muted">
+                      {client ? 'Contact unavailable' : 'Client unavailable'}
+                    </span>
+                  )}
+
+                  {recall.sentAt ? (
+                    <button
+                      type="button"
+                      onClick={() => void setSentAt(recall, undefined)}
+                      disabled={busyId !== undefined}
+                      className="min-h-11 rounded-xl border border-line px-3 text-sm font-bold text-muted disabled:opacity-60"
+                    >
+                      {busyId === recall.id ? 'Saving…' : 'Undo'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void setSentAt(recall, new Date().toISOString())}
+                      disabled={busyId !== undefined}
+                      className="min-h-11 rounded-xl border border-line px-3 text-sm font-bold text-muted disabled:opacity-60"
+                    >
+                      {busyId === recall.id ? 'Saving…' : 'Mark as sent'}
+                    </button>
+                  )}
+                </div>
+
+                {recall.sentAt ? (
+                  <p className="mt-2 text-sm font-semibold text-success-text">
+                    Sent {formatFullDate(recall.sentAt)}
+                  </p>
+                ) : null}
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm leading-6 text-muted">No recalls were created for this appointment.</p>
+      )}
+
+      <div className="min-h-6" aria-live="polite">
+        {actionError ? <p className="mt-3 text-sm font-bold leading-5 text-danger-text">{actionError}</p> : null}
+      </div>
+    </section>
   )
 }
 
@@ -1344,28 +1486,35 @@ export function Calendar() {
 
   return (
     <div className="min-w-0 lg:grid lg:grid-cols-[minmax(22rem,1.35fr)_minmax(18rem,0.8fr)] lg:items-start lg:gap-6">
-      <CalendarMaster
-        view={view}
-        anchorKey={anchorKey}
-        selectedKey={selectedKey}
-        itemsByDate={itemsByDate}
-        clientsById={clientsById}
-        childAppointments={childAppointments}
-        onViewChange={(nextView) => {
-          setView(nextView)
-          if (nextView === 'day') setMobileDayOpen(true)
-        }}
-        onAnchorChange={(key) => { setAnchorKey(key); setSelectedKey(key) }}
-        onSelectDay={(key) => {
-          setSelectedKey(key)
-          setAnchorKey(key)
-          setMobileDayOpen(true)
-        }}
-        onOpen={openAppointment}
-        onCreate={() => navigate('/calendar/new')}
-      />
+      <div className={selectedAppointment ? 'hidden lg:block' : 'contents'}>
+        <CalendarMaster
+          view={view}
+          anchorKey={anchorKey}
+          selectedKey={selectedKey}
+          itemsByDate={itemsByDate}
+          clientsById={clientsById}
+          childAppointments={childAppointments}
+          onViewChange={(nextView) => {
+            setView(nextView)
+            if (nextView === 'day') setMobileDayOpen(true)
+          }}
+          onAnchorChange={(key) => { setAnchorKey(key); setSelectedKey(key) }}
+          onSelectDay={(key) => {
+            setSelectedKey(key)
+            setAnchorKey(key)
+            setMobileDayOpen(true)
+          }}
+          onOpen={openAppointment}
+          onCreate={() => navigate('/calendar/new')}
+        />
+      </div>
 
-      <aside className="mt-7 hidden min-w-0 rounded-3xl border border-line bg-paper/75 p-5 lg:sticky lg:top-6 lg:mt-0 lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+      <aside
+        data-appointment-detail-page={selectedAppointment ? 'true' : undefined}
+        className={selectedAppointment
+          ? 'min-w-0 rounded-3xl border border-line bg-paper/75 pb-[calc(1rem+env(safe-area-inset-bottom))] pl-4 pr-4 pt-5 sm:pl-5 sm:pr-5 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pb-5'
+          : 'mt-7 hidden min-w-0 rounded-3xl border border-line bg-paper/75 p-5 lg:sticky lg:top-6 lg:mt-0 lg:block lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto'}
+      >
         {detail}
       </aside>
 
@@ -1381,14 +1530,7 @@ export function Calendar() {
           */}
           {detail}
         </div>
-      ) : (
-        selectedAppointment ? <>
-          <button type="button" onClick={() => navigate('/calendar')} className="fixed inset-0 z-40 bg-ink/25 lg:hidden" aria-label="Close appointment detail backdrop" />
-          <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[calc(100dvh-env(safe-area-inset-top))] overflow-y-auto rounded-t-3xl border-t border-line bg-paper pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-[calc(1.25rem+env(safe-area-inset-left))] pr-[calc(1.25rem+env(safe-area-inset-right))] pt-5 shadow-2xl lg:hidden">
-            {detail}
-          </aside>
-        </> : null
-      )}
+      ) : null}
     </div>
   )
 }

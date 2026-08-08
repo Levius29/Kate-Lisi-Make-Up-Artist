@@ -4,6 +4,11 @@ import { registerSW } from 'virtual:pwa-register'
 
 import App from './App'
 import './index.css'
+import { applyMotionPreference, DEFAULT_MOTION_ENABLED } from './lib/motionPreference'
+
+// Motion is app-controlled and on by default; the stored choice is applied by
+// the shell as soon as IndexedDB answers, independently of the iOS setting.
+applyMotionPreference(DEFAULT_MOTION_ENABLED, document.documentElement)
 
 function StudioRoot() {
   const [updateReady, setUpdateReady] = useState(false)
