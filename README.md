@@ -54,6 +54,16 @@ serve from the `gh-pages` branch. The site is then served at
 - **Install it to the Home Screen on iOS.** Safari deletes the data of an uninstalled web app
   after seven days. The app blocks with instructions until this is acknowledged.
 - **Set a backup passphrase and export once.** Lose the phone with no backup, lose everything.
+- **Do not carry the cash-only rule over from the old agreement.** The base agreement in use
+  before this app required the balance "as one payment in cash — no exceptions". Italian law
+  caps a cash transfer between two parties at EUR 5,000 (art. 49 D.Lgs. 231/2007, threshold as
+  amended by L. 197/2022 from 1 January 2023), and the penalty falls on the person paying as
+  well as the person being paid. The specimen contract supplied totalled EUR 4,650 — EUR 350
+  under the line. A slightly larger wedding, paid exactly as that clause directs, is an offence
+  committed by the client too. Confirm the ceiling currently in force with the accountant and
+  agree a compliant payment clause with the lawyer before issuing anything. Three further terms
+  from that agreement were deliberately not carried across either; they are listed in the note
+  to the reviewing lawyer at the top of `src/contract/template.ts`.
 - **Ask the lawyer about deletion as well as the contract.** "Delete" in this app archives: the
   record keeps its personal data and only stops appearing in lists (`deletedAt`, see
   `src/storage/DexieStorageAdapter.ts`). That is deliberate — an archived client is still

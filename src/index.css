@@ -140,6 +140,55 @@ body {
   }
 }
 
+/*
+ * Motion, deliberately small.
+ *
+ * Every effect here happens AFTER the thing it acknowledges. Nothing delays a tap, nothing
+ * moves on its own, nothing repeats. She uses this standing up in a villa with a bride waiting;
+ * an interface that performs is an interface that wastes her time. The blanket
+ * prefers-reduced-motion rule further down switches all of it off.
+ */
+button,
+a[href] {
+  transition:
+    transform 120ms ease-out,
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+/* The surface gives very slightly under the finger — iOS has no hover to fall back on. */
+button:not(:disabled):active,
+a[href]:active {
+  transform: scale(0.985);
+}
+
+/* A panel that has just opened settles in rather than snapping into existence. */
+.panel-enter {
+  animation: panel-enter 180ms ease-out;
+}
+
+@keyframes panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/*
+ * Marks a row that just changed — a recall sent, a payment recorded. It fades out by itself and
+ * never repeats, so it confirms an action without becoming something that blinks at her.
+ */
+.just-changed {
+  animation: just-changed 1100ms ease-out;
+}
+
+@keyframes just-changed {
+  from {
+    background-color: var(--color-accent-soft);
+  }
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

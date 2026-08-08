@@ -16,6 +16,7 @@ import {
 } from '../lib/recalls'
 import { formatEUR } from '../lib/money'
 import { outstandingAppointments, type OutstandingAppointment } from '../lib/payments'
+import { StatusChip } from '../components/ui/StatusChip'
 import { storage } from '../storage'
 import { META_KEYS } from '../storage/metaKeys'
 import { useLive } from '../storage/useLive'
@@ -76,9 +77,12 @@ function NextAppointment({
 
       {appointment ? (
         <article className="mt-4 min-w-0 rounded-3xl border border-line bg-paper p-5 sm:p-6">
-          <p className="break-words font-display text-2xl leading-tight text-ink">
-            {fullClientName(client)}
-          </p>
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-2">
+            <p className="min-w-0 break-words font-display text-2xl leading-tight text-ink">
+              {fullClientName(client)}
+            </p>
+            <StatusChip status={appointment.status} className="shrink-0" />
+          </div>
           <p className="mt-2 break-words text-sm font-semibold leading-6 text-accent">
             {serviceName}
           </p>
@@ -131,6 +135,7 @@ function UnpaidBalances({
               <span className="min-w-0">
                 <span className="block break-words font-display text-lg leading-tight text-ink">{fullClientName(clientsById.get(appointment.clientId))}</span>
                 <span className="mt-1 block break-words text-xs leading-5 text-muted">{servicesById.get(appointment.serviceId)?.name ?? 'Service unavailable'} · {overdue ? 'Overdue since' : 'Due'} {formatFullDate(dueAt)}</span>
+                <StatusChip status={appointment.status} variant="inline" className="mt-1.5" />
               </span>
               <strong className="shrink-0 text-sm text-accent">{formatEUR(summary.balance.outstanding)}</strong>
             </Link>

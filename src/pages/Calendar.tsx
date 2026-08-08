@@ -17,6 +17,12 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ErrorText, Field, FieldLabel, HelperText } from '../components/ui/FormField'
 import { PageHeader } from '../components/ui/PageHeader'
+import { StatusChip } from '../components/ui/StatusChip'
+import {
+  appointmentStatusOptions as STATUS_OPTIONS,
+  statusLabel,
+  statusStyles,
+} from '../components/ui/appointmentStatus'
 import { SelectInput } from '../components/ui/SelectInput'
 import { TextArea, TextInput } from '../components/ui/TextInput'
 import { ContractIssueError, issueContract } from '../contract/issue'
@@ -95,24 +101,6 @@ interface MilestoneItem {
 
 type CalendarItem = AppointmentItem | MilestoneItem
 
-const STATUS_OPTIONS: ReadonlyArray<{ value: AppointmentStatus; label: string }> = [
-  { value: 'enquiry', label: 'Enquiry' },
-  { value: 'quoted', label: 'Quoted' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'balance_paid', label: 'Balance paid' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-]
-
-const STATUS_STYLES: Record<AppointmentStatus, string> = {
-  enquiry: 'border-status-enquiry-line bg-status-enquiry-surface text-status-enquiry-text',
-  quoted: 'border-status-quoted-line bg-status-quoted-surface text-status-quoted-text',
-  confirmed: 'border-status-confirmed-line bg-status-confirmed-surface text-status-confirmed-text',
-  balance_paid: 'border-status-paid-line bg-status-paid-surface text-status-paid-text',
-  completed: 'border-status-completed-line bg-status-completed-surface text-status-completed-text',
-  // Keep cancelled fully opaque: fading the whole chip also fades its text below readable contrast.
-  cancelled: 'border-status-cancelled-line bg-status-cancelled-surface text-status-cancelled-text',
-}
 
 function parseCalendarRoute(pathname: string): CalendarRoute {
   const segments = pathname.split('/').filter(Boolean)
@@ -146,10 +134,6 @@ function longDateForKey(key: string): string {
 
 function monthTitle(key: string): string {
   return formatFullDate(romeDateKeyToUtc(key)).replace(/^\d+\s/, '')
-}
-
-function statusLabel(status: AppointmentStatus): string {
-  return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
 }
 
 export function createCalendarItems(appointments: readonly Appointment[]): CalendarItem[] {
@@ -235,7 +219,7 @@ function AppointmentCard({ appointment, client, service, children, onOpen }: App
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full min-w-0 rounded-2xl border-l-4 p-4 text-left ${STATUS_STYLES[appointment.status]}`}
+      className={`w-full min-w-0 rounded-2xl border-l-4 p-4 text-left ${statusStyles[appointment.status]}`}
     >
       <span className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <span className="min-w-0">
@@ -365,7 +349,10 @@ function DayAgenda({ dateKey, items, clientsById, servicesById, childAppointment
   })
 
   return (
-    <section className="min-w-0" aria-label={`Schedule for ${longDateForKey(dateKey)}`}>
+    <section
+      className="panel-enter min-w-0"
+      aria-label={`Schedule for ${longDateForKey(dateKey)}`}
+    >
       <header className="mb-5 flex min-w-0 items-start justify-between gap-3 border-b border-line pb-4">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Selected day</p>
@@ -510,7 +497,7 @@ function MonthGrid({ anchorKey, selectedKey, itemsByDate, clientsById, childAppo
                       key={`appointment-${appointment.id}`}
                       type="button"
                       onClick={() => onOpen(appointment)}
-                      className={`min-h-11 w-full min-w-0 rounded-lg border-l-4 px-1 py-1 text-left text-[0.68rem] font-bold leading-tight ${STATUS_STYLES[appointment.status]}`}
+                      className={`min-h-11 w-full min-w-0 rounded-lg border-l-4 px-1 py-1 text-left text-[0.68rem] font-bold leading-tight ${statusStyles[appointment.status]}`}
                       aria-label={`${formatTime(appointment.startAt)}, ${clientName(clientsById.get(appointment.clientId))}${linked ? ', linked wedding set' : ''}`}
                     >
                       <span className="block truncate">{formatTime(appointment.startAt)}</span>
@@ -562,7 +549,7 @@ export function WeekGrid({ anchorKey, selectedKey, itemsByDate, clientsById, chi
               </button>
               <div className="mt-2 space-y-1.5">
                 {visibleAppointments.map((item) => (
-                  <button key={`appointment-${item.appointment.id}`} type="button" onClick={() => onOpen(item.appointment)} className={`min-h-11 w-full rounded-lg border-l-4 p-1.5 text-left text-[0.68rem] font-bold leading-tight ${STATUS_STYLES[item.appointment.status]}`}>
+                  <button key={`appointment-${item.appointment.id}`} type="button" onClick={() => onOpen(item.appointment)} className={`min-h-11 w-full rounded-lg border-l-4 p-1.5 text-left text-[0.68rem] font-bold leading-tight ${statusStyles[item.appointment.status]}`}>
                     {formatTime(item.appointment.startAt)}<br />{clientName(clientsById.get(item.appointment.clientId))}
                     {(item.appointment.parentAppointmentId || childAppointments.get(item.appointment.id)?.length) ? <span className="block">↔ Linked</span> : null}
                   </button>
@@ -931,7 +918,7 @@ function AppointmentDetail({ appointment, client, service, contract, profile, pa
           <button type="button" onClick={onClose} className="h-11 w-11 shrink-0 rounded-full border border-line text-xl text-muted" aria-label="Close appointment detail">×</button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className={`inline-flex min-h-8 items-center rounded-full border px-3 text-xs font-bold uppercase tracking-wide ${STATUS_STYLES[appointment.status]}`}>{statusLabel(appointment.status)}</span>
+          <StatusChip status={appointment.status} />
           <LinkedTag appointment={appointment} children={children} />
         </div>
         {client?.productPreferences.halal ? <HalalBadge /> : null}

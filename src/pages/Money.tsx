@@ -16,6 +16,7 @@ import {
   type OutstandingAppointment,
 } from '../lib/payments'
 import { calculateCurrentYearRevenue, revenueMeterState } from '../lib/revenue'
+import { StatusChip } from '../components/ui/StatusChip'
 import { storage } from '../storage'
 import { useLive } from '../storage/useLive'
 import type {
@@ -383,6 +384,7 @@ function PaymentDetail({ appointment, client, service, onClose }: {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Booking money</p>
           <h2 className="mt-2 break-words font-display text-3xl leading-tight text-ink">{clientName(client)}</h2>
           <p className="mt-1 break-words text-sm leading-6 text-muted">{service?.name ?? 'Service unavailable'} · {formatFullDate(appointment.startAt)}</p>
+          <StatusChip status={appointment.status} className="mt-2.5" />
         </div>
         <button type="button" onClick={onClose} className="h-11 w-11 shrink-0 rounded-full border border-line text-xl text-muted" aria-label="Close payment detail">×</button>
       </header>
